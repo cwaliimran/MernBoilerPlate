@@ -254,31 +254,51 @@ const sendMessage = async (req, res) => {
 
   
     // Emit the message only after it is successfully saved
+   // const activeSockets = getActiveSockets(); // Get the latest active sockets
+    // const receiverSocketId = activeSockets[otherUserId]; // Get receiver's socket ID
+    // if (receiverSocketId) {
+    //   console.log("Delivering message to receiver via socket", receiverSocketId);
+    //   req.io.to(receiverSocketId).emit("receiveMessage", messageObject);
+    // } else {
+    //   console.log("Receiver is not connected, no socket ID found");
+    // }
+
+
+    // // Emit `chatUpdated` to update the chats screen for both sender and receiver
+    // const senderSocketId = activeSockets[senderId];
+    // if (senderSocketId) {
+    //   req.io.to(senderSocketId).emit("chatUpdated", {
+    //     senderId,
+    //     receiverId: otherUserId,
+    //     messageContent: messageObject,
+    //   });
+    // }
+    // if (receiverSocketId) {
+    //   req.io.to(receiverSocketId).emit("chatUpdated", {
+    //     senderId,
+    //     receiverId: otherUserId,
+    //     messageContent: messageObject,
+    //   });
+    // }
+
+    // Emit the message only after it is successfully saved
     const activeSockets = getActiveSockets(); // Get the latest active sockets
     const receiverSocketId = activeSockets[otherUserId]; // Get receiver's socket ID
+      // Emit `chatUpdated` for both sender and receiver
+      const chatUpdatePayload = {
+        senderId,
+        receiverId: otherUserId,
+        messageContent: messageObject,
+    };
+    // Send message to receiver's socket if connected and emit `chatUpdated`
     if (receiverSocketId) {
-      console.log("Delivering message to receiver via socket", receiverSocketId);
       req.io.to(receiverSocketId).emit("receiveMessage", messageObject);
-    } else {
-      console.log("Receiver is not connected, no socket ID found");
+      req.io.to(receiverSocketId).emit("chatUpdated", chatUpdatePayload);
     }
 
-
-    // Emit `chatUpdated` to update the chats screen for both sender and receiver
-    const senderSocketId = activeSockets[senderId];
-    if (senderSocketId) {
-      req.io.to(senderSocketId).emit("chatUpdated", {
-        senderId,
-        receiverId: otherUserId,
-        messageContent: messageObject,
-      });
-    }
-    if (receiverSocketId) {
-      req.io.to(receiverSocketId).emit("chatUpdated", {
-        senderId,
-        receiverId: otherUserId,
-        messageContent: messageObject,
-      });
+    // Emit `chatUpdated` for sender
+    if (activeSockets[senderId]) {
+      req.io.to(activeSockets[senderId]).emit("chatUpdated", chatUpdatePayload);
     }
 
 
