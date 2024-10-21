@@ -16,13 +16,13 @@ const router = express.Router();
 const apiRateLimiter = createRateLimiter("AdminSettings");
 
 // Route to fetch terms and conditions with rate limiting
-router.get("/termsAndConditions", apiRateLimiter, getTermsAndConditions);
+router.get("/terms-conditions", apiRateLimiter, getTermsAndConditions);
 
 // Route to fetch about us with rate limiting
-router.get("/aboutUs", apiRateLimiter, getAboutUs);
+router.get("/about-us", apiRateLimiter, getAboutUs);
 
 // Route to fetch privacy policy with rate limiting
-router.get("/privacyPolicy", apiRateLimiter, getPrivacyPolicy);
+router.get("/privacy-policy", apiRateLimiter, getPrivacyPolicy);
 
 // Route to create admin settings (requires auth and admin privileges)
 router.post("/create", auth, admin, createAdminSettings);

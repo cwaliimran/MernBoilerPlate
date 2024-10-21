@@ -11,6 +11,7 @@ const {
   getSubscriptions,
   getUserProfile,
   updateUserProfile,
+  documentsIdentity
 } = require("../controllers/userController");
 const router = express.Router();
 
@@ -26,11 +27,12 @@ router.get("/profile", (req, res, next) => {
   getUserProfile(req, res, next);
 });
 router.put("/profile", updateUserProfile)
+router.put("/:userIdToVerify/documents-identity", admin, documentsIdentity);
 router.get("/allUsers", admin, allUsers);
 router.post("/:userIdToBlock/block", blockUser);
 router.post("/:userIdToReport/report", reportUser);
-router.post("/addOrUpdateSubscription", addOrUpdateSubscription);
-router.post("/removeSubscription/:subscriptionId", removeSubscription);
+router.post("/add-update-subscription", addOrUpdateSubscription);
+router.post("/remove-subscription/:subscriptionId", removeSubscription);
 router.get("/subscriptions", getSubscriptions);
 
 module.exports = router;

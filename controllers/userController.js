@@ -4,7 +4,7 @@ const { sendResponse, validateParams } = require("../helperUtils/responseUtil");
 const { formatUserResponse } = require("../helperUtils/userResponseUtil");
 const { NotificationTypes } = require("../models/Notifications");
 const { sendUserNotifications } = require("./communicationController");
-
+const validator = require("validator");
 //get all users
 //get all users
 
@@ -28,7 +28,103 @@ const allUsers = async (req, res) => {
   }
 };
 
+const getNearbyUsers = async (req, res) => {
+  const { longitude, latitude } = req.query;
 
+  const validationOptions = {
+    queryParams: ["longitude", "latitude"],
+  };
+
+  if (!validateParams(req, res, validationOptions)) {
+    return; // Validation failed, response already sent
+  }
+
+  try {
+    const usersNearby = await User.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [parseFloat(longitude), parseFloat(latitude)],
+          },
+          distanceField: "distance",
+          spherical: true,
+          maxDistance: 5000, // Max distance in meters (e.g., 5km)
+        },
+      },
+    ]);
+
+    return sendResponse({
+      res,
+      statusCode: 200,
+      translationKey: "Nearby users fetched successfully",
+      data: usersNearby,
+    });
+  } catch (error) {
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: "An error occurred while fetching nearby users",
+      error,
+    });
+  }
+};
+
+const documentsIdentity = async (req, res) => {
+  const { userIdToVerify } = req.params; // ID of the user to verify
+  const { type } = req.body; // Verification type
+
+  const validationOptions = {
+    pathParams: ["userIdToVerify"],
+    objectIdFields: ["userIdToVerify"],
+    rawData: ["type"],
+  };
+
+  if (!validateParams(req, res, validationOptions)) {
+    return; // Validation failed, response already sent
+  }
+  //update type in user
+  try {
+    const user = await User.findById(userIdToVerify);
+
+    if (!user) {
+      return sendResponse({
+        res,
+        statusCode: 404,
+        translateMessage: false,
+        translationKey: "User to verify not found",
+      });
+    }
+
+    // Check if the provided type is valid
+    const validTypes = ["pending", "submitted", "verified", "rejected"];
+    if (!validTypes.includes(type)) {
+      return sendResponse({
+        res,
+        statusCode: 400,
+        translationKey: "Invalid verification type, supported types are " + validTypes.join(", "),
+        translateMessage: false,
+      });
+    }
+
+    user.verificationStatus.documents = type;
+    await user.save();
+    const response = formatUserResponse(user, null, [], ["resetToken"]);
+    return sendResponse({
+      res,
+      statusCode: 200,
+      data: response,
+      translationKey: "User identity updated successfully",
+    });
+  } catch (error) {
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: "An error occurred while verifying the user",
+      error,
+    });
+  }
+};
 
 // Block User Function
 const blockUser = async (req, res) => {
@@ -446,10 +542,11 @@ const getUserProfile = async (req, res, next, fieldsToPopulate = []) => {
         translationKey: "User not found",
       });
     }
-    // Attach base URL to user object
-    const baseUrl = `${process.env.S3_BASE_URL}/`;
-    user.profileIcon = user.profileIcon ? baseUrl + user.profileIcon : baseUrl + "noimage.png";
-    const response = formatUserResponse(user, null, [], ["resetToken"]);
+  
+     // Ensure toJSON method is applied to strip out sensitive data
+     const userObject = user.toJSON();
+     console.log("object",userObject);
+    const response = formatUserResponse(userObject, null, [], ["resetToken"]);
     return sendResponse({
       res,
       statusCode: 200,
@@ -475,11 +572,10 @@ const getUserProfile = async (req, res, next, fieldsToPopulate = []) => {
  * @returns {Promise<void>}
  */
 const updateUserProfile = async (req, res, next) => {
-  const { name, profileIcon } = req.body;
+  const { name, profileIcon, phoneNumber, location } = req.body;
   const currentUser = req.user;
 
   try {
-   
     const user = await User.findById(currentUser._id);
 
     if (!user) {
@@ -492,21 +588,59 @@ const updateUserProfile = async (req, res, next) => {
     }
 
     if (profileIcon) {
-      user.profileIcon = profileIcon
+      user.profileIcon = profileIcon;
     }
 
     // Update fields if provided
-    if (name) user.name = name;
+    if (name && name.trim() !== "") user.name = name;
+    if (phoneNumber) {
+      //validate phone using validator
+      if (!validator.isMobilePhone(phoneNumber)) {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "Invalid phone number",
+          translateMessage: false,
+        });
+      }
+      user.phoneNumber = phoneNumber;
+    }
+
+    if (location) {
+      // Validate location
+      const { coordinates, fullAddress } = location;
+      if (!coordinates || coordinates.length !== 2 || !fullAddress) {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "Invalid location data",
+          translateMessage: false,
+        });
+      }
+      // Ensure coordinates are numbers
+      const [longitude, latitude] = coordinates;
+      if (typeof longitude !== "number" || typeof latitude !== "number") {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "Invalid coordinates data",
+          translateMessage: false,
+        });
+      }
+      user.location = {
+        type: "Point",
+        coordinates: [longitude, latitude],
+        fullAddress,
+      };
+    }
 
     // Save the updated user
     await user.save();
 
-    // Attach base URL to user object
-    // Attach base URL to user object
-    const baseUrl = `${process.env.S3_BASE_URL}/`;
-    user.profileIcon = user.profileIcon ? baseUrl + user.profileIcon : baseUrl + "noimage.png";
+   // Ensure toJSON method is applied to strip out sensitive data
+   const userObject = user.toJSON();
 
-    const response = formatUserResponse(user);
+    const response = formatUserResponse(userObject, null, [], ["resetToken"]);
     return sendResponse({
       res,
       statusCode: 200,
@@ -535,4 +669,5 @@ module.exports = {
   getUserWithPopulatedFields,
   getUserProfile,
   updateUserProfile,
+  documentsIdentity,
 };

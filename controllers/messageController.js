@@ -11,10 +11,8 @@ const {
 } = require("../helperUtils/responseUtil");
 const { formatUserResponse } = require("../helperUtils/userResponseUtil");
 
-const {
-  sendUserNotifications,
-} = require("./communicationController");
-const {Devices} = require("../models/Devices");
+const { sendUserNotifications } = require("./communicationController");
+const { Devices } = require("../models/Devices");
 const { NotificationTypes } = require("../models/Notifications");
 const { getActiveSockets } = require("../sockets/activeSockets");
 
@@ -24,8 +22,7 @@ const fetchChats = async (req, res) => {
   const { page, limit } = parsePaginationParams(req);
 
   try {
-    const [currentUser, latestMessages] = await Promise.all([
-      User.findById(_id).select("visibleTo"),
+    const [latestMessages] = await Promise.all([
       Message.aggregate([
         {
           $match: {
@@ -70,8 +67,6 @@ const fetchChats = async (req, res) => {
       ]),
     ]);
 
-    const visibleTo = currentUser.visibleTo;
-
     const userIds = latestMessages.map((message) =>
       message.lastMessage.senderId.equals(_id)
         ? message.lastMessage.receiverId
@@ -80,11 +75,11 @@ const fetchChats = async (req, res) => {
 
     // Fetch users and total chats in parallel
     const [users, totalChats] = await Promise.all([
-      User.find({ _id: { $in: userIds } })
-        .select("name profileIcon")
-        .lean(),
+      User.find({ _id: { $in: userIds }, "accountState.userType": "user" })
+      .select("name anonymousName profileIcon visibleTo")
+      .lean(),
       Message.distinct("senderId", {
-        $or: [{ senderId: _id }, { receiverId: _id }],
+      $or: [{ senderId: _id }, { receiverId: _id }],
       }),
     ]);
 
@@ -100,8 +95,8 @@ const fetchChats = async (req, res) => {
         return null; // Handle when otherUser is null
       }
 
-      // Construct base URL for profile icon
       const baseUrl = `${process.env.S3_BASE_URL}/`;
+      // Validate profile icon
       otherUser.profileIcon = otherUser.profileIcon
         ? baseUrl + otherUser.profileIcon
         : baseUrl + "noimage.png";
@@ -113,12 +108,14 @@ const fetchChats = async (req, res) => {
       );
       message.lastMessage.timesince = moment(localDate).fromNow();
 
+      // Determine whether to show real name or anonymous name based on visibility
+      otherUser.isAnonymous = !(otherUser.visibleTo && otherUser.visibleTo.some((id) => id.equals(_id)));
       return {
         message: message.lastMessage,
         otherUser: formatUserResponse(
           otherUser,
           null,
-          ["basicInfo"],
+          ["basicInfo", "anonymousName"],
           ["basicInfo.email", "basicInfo.phoneNumber", "basicInfo.phoneNote"]
         ),
         unreadCount: message.unreadCount,
@@ -149,11 +146,44 @@ const fetchChats = async (req, res) => {
   }
 };
 
-
 // Fetch messages (pagination)
-const fetchMessages = async (req, res) => {
+const fetchMessages = async (req, res, isSupportTeam = false) => {
   const { _id, timezone } = req.user;
-  const { otherUserId } = req.params; // Use the parameter from the route
+  let otherUserId;
+  let supportPerson = null;
+
+  // If it's an admin message, assign the admin ID
+  if (isSupportTeam) {
+    otherUserId = process.env.ADMIN_ID || "";
+    if (!otherUserId) {
+      return sendResponse({
+        res,
+        statusCode: 500,
+        translationKey: "Support team account not found, try again later",
+        error: "Support team account not found, try again later",
+      });
+    }
+
+    // Fetch the support person details and current user visibility in parallel
+    const [supportPersonDetails, currentUser] = await Promise.all([
+      User.findById(otherUserId).select("name profileIcon").lean(),
+      User.findById(_id).select("visibleTo").lean(),
+    ]);
+
+    // Construct base URL
+    const baseUrl = `${process.env.S3_BASE_URL}/`;
+
+    // Validate profile icon
+    supportPersonDetails.profileIcon = supportPersonDetails.profileIcon
+      ? baseUrl + supportPersonDetails.profileIcon
+      : baseUrl + "noimage.png";
+   // supportPersonDetails.isAnonymous = !currentUser.visibleTo.some((id) => id.equals(supportPersonDetails._id));
+    supportPerson = supportPersonDetails;
+  } else {
+    // If it's a normal message, extract `otherUserId` from the route params
+    otherUserId = req.params.otherUserId;
+  }
+
   const { page, limit } = parsePaginationParams(req);
 
   const validationOptions = {
@@ -206,11 +236,16 @@ const fetchMessages = async (req, res) => {
     const totalPages = Math.ceil(totalMessages / limit);
     const meta = generateMeta(page, limit, totalMessages, totalPages);
 
+    // If support person details are available, append them to the response
+    const responseData = supportPerson
+      ? { supportPerson, messages: formattedMessages }
+      : formattedMessages;
+
     return sendResponse({
       res,
       statusCode: 200,
       translationKey: "Messages fetched successfully",
-      data: formattedMessages,
+      data: responseData,
       meta: meta,
     });
   } catch (error) {
@@ -223,10 +258,28 @@ const fetchMessages = async (req, res) => {
   }
 };
 // Send a new message
-const sendMessage = async (req, res) => {
+const sendMessage = async (req, res, isSupportTeam = false) => {
   const { _id: senderId, timezone } = req.user; // sender is the current authenticated user
-  const { otherUserId } = req.params; // receiverId is extracted from the route parameter
   const { messageType, messageContent = "", mediaUrl = null } = req.body;
+
+  let receiverId; // We'll determine this dynamically
+
+  // If it's an admin message, assign the admin ID
+  if (isSupportTeam) {
+    // Assuming you have the admin's user ID stored in your environment variables
+    receiverId = process.env.ADMIN_ID || "";
+    if (!receiverId) {
+      return sendResponse({
+        res,
+        statusCode: 500,
+        translationKey: "Support team account not found, try again later",
+        error: "Support team account not found, try again later",
+      });
+    }
+  } else {
+    // If it's a normal message, extract `otherUserId` from the route params
+    receiverId = req.params.otherUserId;
+  }
 
   const validationOptions = {
     rawData: ["messageType"],
@@ -237,86 +290,69 @@ const sendMessage = async (req, res) => {
   }
 
   try {
-    //get device id of the receiver
+    // Check if receiverId is active in sockets
+    const activeSockets = getActiveSockets(); // Get the latest active sockets
+    const receiverSocketId = activeSockets[receiverId]; // Get receiver's socket ID
 
-    var message = await Message.create({
+    // Determine the initial readBy array
+    const readBy = [senderId];
+    if (receiverSocketId) {
+      readBy.push(receiverId); // If receiver is active, add receiverId to readBy array
+    }
+
+    // Create the message
+    const message = await Message.create({
       senderId,
-      receiverId: otherUserId, // use otherUserId from params
+      receiverId, // Use the determined receiverId (either admin or other user)
       messageType,
       messageContent,
       mediaUrl,
+      readBy,
     });
+
     const localDate = convertUtcToTimezone(message.createdAt, timezone);
     const timesince = moment(localDate).fromNow();
 
     const messageObject = message.toObject();
     messageObject.timesince = timesince;
 
-  
     // Emit the message only after it is successfully saved
-   // const activeSockets = getActiveSockets(); // Get the latest active sockets
-    // const receiverSocketId = activeSockets[otherUserId]; // Get receiver's socket ID
-    // if (receiverSocketId) {
-    //   console.log("Delivering message to receiver via socket", receiverSocketId);
-    //   req.io.to(receiverSocketId).emit("receiveMessage", messageObject);
-    // } else {
-    //   console.log("Receiver is not connected, no socket ID found");
-    // }
-
-
-    // // Emit `chatUpdated` to update the chats screen for both sender and receiver
-    // const senderSocketId = activeSockets[senderId];
-    // if (senderSocketId) {
-    //   req.io.to(senderSocketId).emit("chatUpdated", {
-    //     senderId,
-    //     receiverId: otherUserId,
-    //     messageContent: messageObject,
-    //   });
-    // }
-    // if (receiverSocketId) {
-    //   req.io.to(receiverSocketId).emit("chatUpdated", {
-    //     senderId,
-    //     receiverId: otherUserId,
-    //     messageContent: messageObject,
-    //   });
-    // }
-
-    // Emit the message only after it is successfully saved
-    const activeSockets = getActiveSockets(); // Get the latest active sockets
-    const receiverSocketId = activeSockets[otherUserId]; // Get receiver's socket ID
-      // Emit `chatUpdated` for both sender and receiver
-      const chatUpdatePayload = {
-        senderId,
-        receiverId: otherUserId,
-        messageContent: messageObject,
-    };
-    // Send message to receiver's socket if connected and emit `chatUpdated`
     if (receiverSocketId) {
       req.io.to(receiverSocketId).emit("receiveMessage", messageObject);
-      req.io.to(receiverSocketId).emit("chatUpdated", chatUpdatePayload);
     }
 
-    // Emit `chatUpdated` for sender
-    if (activeSockets[senderId]) {
-      req.io.to(activeSockets[senderId]).emit("chatUpdated", chatUpdatePayload);
+    // Emit `chatUpdated` to update the chats screen for both sender and receiver
+    const senderSocketId = activeSockets[senderId];
+    if (senderSocketId) {
+      req.io.to(senderSocketId).emit("chatUpdated", {
+        senderId,
+        receiverId,
+        messageContent: messageObject,
+      });
+    }
+    if (receiverSocketId) {
+      req.io.to(receiverSocketId).emit("chatUpdated", {
+        senderId,
+        receiverId,
+        messageContent: messageObject,
+      });
     }
 
-
-    const recipientIds = [otherUserId];
-    const title = "New Message";
+    // Optionally send notifications
+    const recipientIds = [receiverId];
+    const title = isSupportTeam ? "Message to Admin" : "New Message";
     const body = `${req.user.name} sent you a message: ${messageContent}`;
-    // Send notification in the background
+
     sendUserNotifications({
       recipientIds,
       title,
       body,
       data: { type: NotificationTypes.NEW_MESSAGE },
       sender: senderId,
-      objectId: otherUserId,
+      objectId: receiverId,
     }).catch((notificationError) => {
       console.error("Error sending notification:", notificationError);
     });
-
 
     return sendResponse({
       res,
@@ -330,7 +366,7 @@ const sendMessage = async (req, res) => {
       res,
       statusCode: 500,
       translationKey: error.message,
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -361,7 +397,7 @@ const deleteChat = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-translateMessage: false,
+        translateMessage: false,
         translationKey: "No chat found to delete",
       });
     }
@@ -386,7 +422,7 @@ const deleteMessage = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 404,
-translateMessage: false,
+      translateMessage: false,
       translationKey: "Invalid message ID",
     });
   }
@@ -397,7 +433,7 @@ translateMessage: false,
       return sendResponse({
         res,
         statusCode: 404,
-translateMessage: false,
+        translateMessage: false,
         translationKey: "No such message found",
       });
     }
@@ -427,7 +463,7 @@ const markAllMessagesAsRead = async (req, res) => {
       res,
       statusCode: 400,
       translationKey: "Invalid other user ID",
-      translateMessage : false,
+      translateMessage: false,
     });
   }
 
@@ -479,7 +515,7 @@ const searchChats = async (req, res) => {
       res,
       statusCode: 400,
       translationKey: "Keyword is required for searching",
-      translateMessage : false,
+      translateMessage: false,
     });
   }
 
@@ -487,6 +523,7 @@ const searchChats = async (req, res) => {
     // Step 1: Search for users by name with pagination
     const matchedUsers = await User.find({
       name: { $regex: keyword, $options: "i" }, // Case-insensitive partial match on name
+      "accountState.userType": "user", // Ensure user type is "user"
     })
       .select("_id name profileIcon")
       .skip((page - 1) * limit) // Skip for pagination
@@ -497,7 +534,7 @@ const searchChats = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-translateMessage: false,
+        translateMessage: false,
         translationKey: "No users found for the given name",
         data: [],
       });
@@ -558,7 +595,7 @@ translateMessage: false,
       return sendResponse({
         res,
         statusCode: 404,
-translateMessage: false,
+        translateMessage: false,
         translationKey: "No chats found for the given name",
         data: [],
       });
@@ -584,7 +621,7 @@ translateMessage: false,
       // Construct base URL for profile icon
       const baseUrl = `${process.env.S3_BASE_URL}/`;
       otherUser.profileIcon = otherUser.profileIcon
-        ? baseUrl + otherUser.profileIcon.data.icon
+        ? baseUrl + otherUser.profileIcon
         : baseUrl + "noimage.png";
 
       // Convert UTC to local time

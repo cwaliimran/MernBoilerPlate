@@ -19,6 +19,8 @@ const messageRoutes = require("./routes/messageRoutes");
 const communicationRoutes = require("./routes/communicationRoutes");
 const notificationsRoutes = require("./routes/notificationsRoutes");
 const supportRoutes = require("./routes/supportRoutes");
+const contactUsRoutes = require("./routes/contactUsRoutes");
+const documentsRoutes = require("./routes/documentsRoutes");
 const { i18nConfig } = require("./config/i18nConfig");
 const chatSocketHandler = require("./sockets/chatSocketHandler.js");
 
@@ -74,14 +76,16 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/upload/s3", uploads3Routes);
 app.use("/api/settings", adminSettingsRoutes);
 app.use("/api/conversation", messageRoutes);
-app.use("/api/communication", communicationRoutes);
+app.use("/api/communications", communicationRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/support", supportRoutes);
+app.use("/api/contact-us", contactUsRoutes);
+app.use("/api/documents", documentsRoutes);
 
 //db utils routes
 app.use("/api/util", bulkInsertRoutes);

@@ -20,8 +20,8 @@ const register = async (req, res) => {
   try {
     const validationOptions = {
       rawData: [
-        "phoneNumber",
         "name",
+        "phoneNumber",
         "email",
         "password",
         "deviceId",
@@ -50,25 +50,27 @@ const register = async (req, res) => {
     }
 
     // Fetch existing user and validate profile icon simultaneously
-    const [existingUser] = await Promise.all([
-      User.findOne({
-        $or: [{ email: email }, { phoneNumber: phoneNumber }],
-      }),
-    ]);
+    const existingUser = await User.findOne({
+      $or: [
+      { email: email.trim().toLowerCase() },
+      { phoneNumber: phoneNumber },
+      ],
+    });
+
 
     if (existingUser) {
-      if (existingUser.email === email) {
-        return sendResponse({
-          res,
-          statusCode: 409,
-          translationKey: "Email already exists.",
-        });
-      } else if (existingUser.phoneNumber === phoneNumber) {
-        return sendResponse({
-          res,
-          statusCode: 409,
-          translationKey: "Phone number already exists.",
-        });
+      if (existingUser.email === email.trim().toLowerCase() && existingUser.verificationStatus.email === "verified") {
+      return sendResponse({
+        res,
+        statusCode: 409,
+        translationKey: "Email already exists.",
+      });
+      } else if (existingUser.phoneNumber === phoneNumber && existingUser.verificationStatus.phoneNumber === "verified") {
+      return sendResponse({
+        res,
+        statusCode: 409,
+        translationKey: "Phone number already exists.",
+      });
       }
     }
 
@@ -87,14 +89,41 @@ const register = async (req, res) => {
       }
     }
 
-    // Create and save the user within the session
-    const user = new User({
-      ...req.body,
-      accountState: { userType: finalUserType },
-    });
+    // Handle location: ensure it's a valid object and has coordinates
+    if (req.body.location) {
+      if (
+        typeof req.body.location === "object" &&
+        Array.isArray(req.body.location.coordinates) &&
+        req.body.location.coordinates.length === 2
+      ) {
+        // Ensure type is "Point" if it's missing
+        req.body.location.type = req.body.location.type || "Point";
+      } else {
+        // Invalid location data
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "Invalid location data.",
+          translateMessage: false,
+        });
+      }
+    }
 
-    const otp = user.generateOtp(user.timezone);
-    user.otp = otp;
+    let user;
+    if (existingUser) {
+      // Update existing user if email is not verified
+      user = existingUser;
+      Object.assign(user, req.body);
+      user.accountState.userType = finalUserType;
+    } else {
+      // Create and save the user within the session
+      user = new User({
+        ...req.body,
+        accountState: { userType: finalUserType },
+      });
+    }
+
+    const otp = user.generateOtp("email", user.timezone);
 
     await user.save({ session });
 
@@ -105,12 +134,6 @@ const register = async (req, res) => {
 
     // Commit the transaction
     await session.commitTransaction();
-
-    // Construct base URL
-    const baseUrl = `${process.env.S3_BASE_URL}/`;
-    user.profileIcon = user.profileIcon
-      ? baseUrl + user.profileIcon
-      : baseUrl + "noimage.png";
 
     // Ensure toJSON method is applied to strip out sensitive data
     const userObject = user.toJSON();
@@ -130,10 +153,7 @@ const register = async (req, res) => {
     });
   } catch (error) {
     // Only abort the transaction if it hasn't been committed yet
-    // If an error occurs before commit, abort the transaction
-    if (!transactionCommitted) {
-      await session.abortTransaction();
-    }
+    await session.abortTransaction();
     // Handle other errors
     return sendResponse({
       res,
@@ -176,7 +196,7 @@ const login = async (req, res) => {
     }
 
     // Check the user's verification status
-    const verificationStatus = user.verificationStatus;
+    const verificationStatus = user.verificationStatus["email"];
     if (verificationStatus === "pending") {
       return sendResponse({
         res,
@@ -235,16 +255,6 @@ const login = async (req, res) => {
 
     const token = user.generateAuthToken();
 
-    // Construct base URL
-    const baseUrl = `${process.env.S3_BASE_URL}/`;
-
-    // Validate profile icon
-    var pIcon = null;
-
-    pIcon = user.profileIcon;
-    if (pIcon) {
-      user.profileIcon = pIcon ? baseUrl + pIcon : baseUrl + "noimage.png";
-    }
     // Ensure toJSON method is applied to strip out sensitive data
     const userObject = user.toJSON();
 
@@ -278,15 +288,38 @@ const generateOtp = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { email } = req.body;
+    const { email, phoneNumber, type } = req.body;
     const validationOptions = {
-      rawData: ["email"],
+      rawData: [type === "email" ? "email" : "phoneNumber"],
     };
     if (!validateParams(req, res, validationOptions)) {
       return;
     }
 
-    const user = await User.findOne({ email });
+    // Validate phone number format
+    if (
+      type === "phoneNumber" &&
+      phoneNumber &&
+      !validator.isMobilePhone(phoneNumber, "any", { strictMode: true })
+    ) {
+      return sendResponse({
+        res,
+        statusCode: 400,
+        translationKey: "Invalid phone number format.",
+        translateMessage: false,
+      });
+    }
+
+    let user;
+    if (type === "email") {
+      user = await User.findOne({ email: email.toLowerCase() }).select(
+        "email accountState otpInfo"
+      );
+    } else if (type === "phoneNumber") {
+      user = await User.findOne({ phoneNumber }).select(
+        "phoneNumber accountState otpInfo"
+      );
+    }
 
     if (!user) {
       return sendResponse({
@@ -297,22 +330,22 @@ const generateOtp = async (req, res) => {
       });
     }
 
-    //check if account is restricted
+    // Check if account is restricted
     if (
-      user.accountState.status === "restricted" ||
-      user.accountState.status === "suspended"
+      ["restricted", "suspended"].includes(user.accountState.status)
     ) {
       return sendResponse({
-        res,
-        statusCode: 403,
-        translationKey: "Your account is suspended. Please contact support.",
+      res,
+      statusCode: 403,
+      translationKey: "Your account is not active. Please contact support.",
       });
     }
 
-    const otp = user.generateOtp();
+    const otp = user.generateOtp(type, user.timezone);
+    
     await user.save({ session });
 
-    // Send email within the transaction
+    // Send email or SMS within the transaction
     const subject = "Password Reset OTP";
     const mBody = forgotPasswordOtpEmailTemplate(otp);
     // await sendEmailViaAwsSes([email], subject, mBody);
@@ -333,42 +366,65 @@ const generateOtp = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while generating OTP",
+      translationKey: error.message,
       error: error.message,
     });
   }
 };
 
-// Verify OTP
+//Verify otp
 const verifyOtp = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    console.log("email", email + "otp", otp);
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
+  try {
+    const { email, phoneNumber, type, otp } = req.body;
     const validationOptions = {
-      rawData: ["email", "otp"],
+      rawData: [type === "email" ? "email" : "phoneNumber", "otp"],
     };
     if (!validateParams(req, res, validationOptions)) {
       return;
     }
 
-    // Find the user by email
-    const user = await User.findOne({
-      email: email.trim().toLowerCase(),
-    });
-
-    // Check if user is found
-    if (!user) {
+    // Validate phone number format if the OTP is for phone
+    if (
+      type === "phoneNumber" &&
+      phoneNumber &&
+      !validator.isMobilePhone(phoneNumber, "any", { strictMode: true })
+    ) {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "Invalid email.",
+        translationKey: "Invalid phone number format.",
         translateMessage: false,
       });
     }
 
+    let user;
+    if (type === "email") {
+      user = await User.findOne({ email: email.toLowerCase() }).select(
+        "email accountState otpInfo verificationStatus timezone"
+      );
+    } else if (type === "phoneNumber") {
+      user = await User.findOne({ phoneNumber }).select(
+        "phoneNumber accountState otpInfo verificationStatus timezone"
+      );
+    }
+
+    if (!user) {
+      return sendResponse({
+        res,
+        statusCode: 404,
+        translateMessage: false,
+        translationKey: "User not found",
+      });
+    }
+
+    // Access the correct OTP based on the type (email or phone)
+    const userOtpInfo = type === "email" ? user.otpInfo.emailOtp : user.otpInfo.phoneNumberOtp;
+
     // Check if the OTP matches
-    if (user.otpInfo.otp !== otp.toString()) {
+    if (userOtpInfo.otp !== otp.toString()) {
       return sendResponse({
         res,
         statusCode: 400,
@@ -377,10 +433,9 @@ const verifyOtp = async (req, res) => {
       });
     }
 
-    // Check if the OTP has expired based on user's timezone
+    // Check if the OTP has expired
     const currentTime = moment.tz(Date.now(), user.timezone).valueOf();
-
-    if (user.otpInfo.otpExpires && user.otpInfo.otpExpires < currentTime) {
+    if (userOtpInfo.otpExpires && userOtpInfo.otpExpires < currentTime) {
       return sendResponse({
         res,
         statusCode: 400,
@@ -390,28 +445,26 @@ const verifyOtp = async (req, res) => {
     }
 
     // Clear the OTP and OTP expiration after successful verification
-    user.otpInfo.otp = "";
-    user.otpInfo.otpExpires = "";
-    user.otpInfo.otpUsed = true; // Mark OTP as used
-    user.verificationStatus = "verified";
+    userOtpInfo.otp = "";
+    userOtpInfo.otpExpires = "";
+    userOtpInfo.otpUsed = true; // Mark OTP as used
+    user.verificationStatus[type] = "verified"; // Mark verification as complete
+
     // Generate a password reset token (JWT or a UUID)
     const resetToken = generateResetToken(); // Function to generate a secure token
     user.resetToken = resetToken; // Save the token to the user model
-    await user.save();
+
+    await user.save({ session });
+    await session.commitTransaction();
+    session.endSession();
 
     // Fetch the updated user and profile icon simultaneously
-    var updatedUser = await User.findById(user._id);
-
-    // Construct base URL
-    const baseUrl = `${process.env.S3_BASE_URL}/`;
-    updatedUser.profileIcon = updatedUser
-      ? baseUrl + updatedUser.profileIcon
-      : baseUrl + "noimage.png";
+    const updatedUser = await User.findById(user._id);
 
     // Ensure toJSON method is applied to strip out sensitive data
-    var userObject = updatedUser.toJSON();
+    const userObject = updatedUser.toJSON();
 
-    // Generate a new token for the user
+    // Generate a new auth token for the user
     const token = user.generateAuthToken();
 
     // Format the user response using the utility function
@@ -425,15 +478,18 @@ const verifyOtp = async (req, res) => {
       translateMessage: false,
     });
   } catch (error) {
-    console.error("Error during OTP verification for login:", error);
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error during OTP verification:", error);
     return sendResponse({
       res,
       statusCode: 500,
       translationKey: "An error occurred while verifying the OTP",
-      error: error.message,
+      error: error,
     });
   }
 };
+
 
 // Reset Password
 const resetPassword = async (req, res) => {
@@ -476,12 +532,6 @@ const resetPassword = async (req, res) => {
       User.findById(user._id),
       user.generateAuthToken(),
     ]);
-    // Construct base URL
-    const baseUrl = `${process.env.S3_BASE_URL}/`;
-
-    updatedUser.profileIcon = updatedUser.profileIcon
-      ? baseUrl + updatedUser.profileIcon
-      : baseUrl + "noimage.png";
 
     // Apply toJSON method to strip out sensitive data
     const userObject = updatedUser.toJSON();
@@ -587,7 +637,7 @@ const resumeAccount = async (req, res) => {
     // Find the user by email and OTP
     const user = await User.findOne({
       email: email.trim().toLowerCase(),
-      "otpInfo.otp": otp.toString(),
+      "otpInfo.emailOtp.otp": otp.toString(),
     });
 
     // Check if user is found
@@ -603,19 +653,19 @@ const resumeAccount = async (req, res) => {
     // Check if the OTP has expired based on user's timezone
     const currentTime = moment.tz(Date.now(), user.timezone).valueOf();
 
-    if (user.otpInfo.otpExpires && user.otpInfo.otpExpires < currentTime) {
+    if (user.otpInfo.emailOtp.otpExpires && user.otpInfo.emailOtp.otpExpires < currentTime) {
       return sendResponse({
-        res,
-        statusCode: 400,
-        translationKey: "OTP has expired. Please request a new one.",
-        translateMessage: false,
+      res,
+      statusCode: 400,
+      translationKey: "OTP has expired. Please request a new one.",
+      translateMessage: false,
       });
     }
 
     // Clear the OTP and OTP expiration after successful verification
-    user.otpInfo.otp = "";
-    user.otpInfo.otpExpires = "";
-    user.otpInfo.otpUsed = true; // Mark OTP as used
+    user.otpInfo.emailOtp.otp = "";
+    user.otpInfo.emailOtp.otpExpires = "";
+    user.otpInfo.emailOtp.otpUsed = true; // Mark OTP as used
 
     // Check if the account is marked as softDeleted
     if (user.accountState.status !== "softDeleted") {
@@ -702,12 +752,10 @@ const socialAuth = async (req, res) => {
 
       await existingUser.save({ session });
       const token = existingUser.generateAuthToken();
-         //attach base url with profile icon
-      const baseUrl = `${process.env.S3_BASE_URL}/`;
-      existingUser.profileIcon = existingUser.profileIcon
-        ? baseUrl + existingUser.profileIcon
-        : baseUrl + "noimage.png";
-      const response = formatUserResponse(existingUser, token);
+     
+        // Ensure toJSON method is applied to strip out sensitive data
+      const userObject = existingUser.toJSON();
+      const response = formatUserResponse(userObject, token);
 
       // Save device information
       createOrSkipDevice(existingUser._id, deviceId, deviceType);
@@ -729,19 +777,18 @@ const socialAuth = async (req, res) => {
         provider, // Set the initial provider
         [`${provider}Id`]: socialId, // Dynamically store the provider ID
         timezone,
-        verificationStatus: "verified",
+        verificationStatus: {
+          email: "verified", // Mark email as verified
+        },
       });
 
       await newUser.save({ session });
 
       // Generate a token for the new user
       const token = newUser.generateAuthToken();
-      // Construct base URL
-      const baseUrl = `${process.env.S3_BASE_URL}/`;
-      newUser.profileIcon = newUser.profileIcon
-        ? baseUrl + newUser.profileIcon
-        : baseUrl + "noimage.png";
-      const response = formatUserResponse(newUser, token);
+   
+      const jUser = newUser.toJSON();
+      const response = formatUserResponse(jUser, token);
 
       // Save device information
       createOrSkipDevice(newUser._id, deviceId, deviceType);

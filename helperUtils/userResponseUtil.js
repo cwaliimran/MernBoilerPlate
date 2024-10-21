@@ -22,19 +22,29 @@ const formatUserResponse = (
       email: userObject.email,
       phoneNumber: userObject.phoneNumber,
       phoneNote: userObject.phoneNote,
-     
+      location: userObject.location,
     },
     accountState: {
       userType: userObject.accountState?.userType || "user",
       status: userObject.accountState?.status || "active",
-      verificationStatus: userObject.verificationStatus || "pending",
+      verificationStatus: userObject.verificationStatus || {
+        email: "pending",
+        phoneNumber: "pending",
+        documents: "pending",
+      },
       ...(userObject.accountState?.reason
         ? { reason: userObject.accountState.reason }
         : {}),
     },
-    
   };
-
+  if (userObject.documents) {
+    response.documents = {
+      frontImage: userObject.documents.frontImage,
+      backImage: userObject.documents.backImage,
+      status: userObject.verificationStatus.documents,
+      rejectionReason: userObject.documents.rejectionReason,
+    };
+  }
 
   // Append metadata
   response.metadata = {
@@ -54,11 +64,7 @@ const formatUserResponse = (
   }
 
   if (process.env.NODE_ENV === "dev" && userObject.otpInfo) {
-    response.otpInfo = {
-      otp: userObject.otpInfo.otp,
-      otpUsed: userObject.otpInfo.otpUsed,
-      otpExpires: otpExpLocalTz || null, // Provide a default value if otpExpLocalTz is not set
-    };
+    response.otpInfo = userObject.otpInfo
   }
   if(userObject.resetToken){
     response.resetToken = userObject.resetToken;

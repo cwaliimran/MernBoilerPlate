@@ -11,11 +11,11 @@ const {
 const router = express.Router();
 
 // Route to send email
-router.post('/sendEmailSgrid', auth, sendEmailSgrid);
-router.post('/sendEmailAws', auth, sendEmailAws);
-router.post('/sendOtpPinpoint', auth, sendSmsViaPinpointAws);
+router.post('/send-email-sgrid', auth, sendEmailSgrid);
+router.post('/send-email-aws', auth, sendEmailAws);
+router.post('/send-otp-pin-point', auth, sendSmsViaPinpointAws);
 
 // Route to send notification
-router.post('/sendNotification', auth, sendNotificationControllerForTesting);
+router.post('/send-notification', auth, sendNotificationControllerForTesting);
 
 module.exports = router;

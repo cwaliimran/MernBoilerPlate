@@ -28,14 +28,31 @@ const resetPasswordRateLimiter = createRateLimiter("resetPassword", 15, 15); // 
 // Apply rate limiters to routes
 router.post("/register", signupRateLimiter, register);
 router.post("/login", loginRateLimiter, login);
-router.post("/forgotPassword", generateOtpRateLimiter, generateOtp);
-router.post("/resendOtp", resendOtpRateLimiter, generateOtp);
-router.post("/verifyOtp", verifyOtpRateLimiter, verifyOtp);
-router.post("/resetPassword", resetPasswordRateLimiter, resetPassword);
+router.post("/forgot-password", generateOtpRateLimiter, (req, res, next) => {
+  req.body.type = "email";
+  generateOtp(req, res, next);
+});
+router.post("/resend-otp/email", resendOtpRateLimiter, (req, res, next) => {
+  req.body.type = "email";
+  generateOtp(req, res, next);
+});
+router.post("/resend-otp/phone", resendOtpRateLimiter, (req, res, next) => {
+  req.body.type = "phoneNumber";
+  generateOtp(req, res, next);
+});
+router.post("/verify-otp/email", verifyOtpRateLimiter, (req, res, next) => {
+  req.body.type = "email";
+  verifyOtp(req, res, next);
+});
+router.post("/verify-otp/phone", verifyOtpRateLimiter, (req, res, next) => {
+  req.body.type = "phoneNumber";
+  verifyOtp(req, res, next);
+});
+router.post("/reset-password", resetPasswordRateLimiter, resetPassword);
 
 router.post("/logout", auth, logout);
-router.delete("/deleteAccount", auth, deleteAccount);
-router.put("/resumeAccount", resumeAccount);
-router.post("/socialAuth", socialAuth);
+router.delete("/delete-account", auth, deleteAccount);
+router.put("/resume-account", resumeAccount);
+router.post("/social-auth", socialAuth);
 
 module.exports = router;
