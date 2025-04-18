@@ -29,6 +29,11 @@ const subscriptionSchema = new mongoose.Schema({
   },
 });
 
+const DistanceTypes = {
+  KM: "km",
+  MILES: "miles",
+};
+
 const userSchema = new mongoose.Schema(
   {
     profileIcon: {
@@ -42,13 +47,13 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: [true, "email_required"], // Generic error message key
       unique: true,
       validate: {
         validator: function (value) {
           return validator.isEmail(value);
         },
-        message: "Invalid email format.",
+        message: "email_invalid", // Generic error message key
       },
     },
 
@@ -113,6 +118,19 @@ const userSchema = new mongoose.Schema(
         type: String, // Full formatted address, e.g., "13th Street 47, NY 10011, USA"
         default: "", // You can make it optional if needed
       },
+    },
+    distanceUnit: {
+      type: String,
+      enum: Object.values(DistanceTypes),
+      default: DistanceTypes.KM,
+    },
+    currencySymbol: {
+      type: String,
+      default: "$",
+    },
+    currencyCode: {
+      type: String,
+      default: "USD",
     },
     accountState: {
       userType: {
@@ -307,15 +325,17 @@ userSchema.methods.generateAuthToken = function () {
 // Find user by credentials
 userSchema.statics.findByCredentials = async (email, password) => {
   const user = await User.findOne({ email: email });
+
   if (!user) {
-    throw new Error("No account found with the provided email address.");
-  }
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    throw new Error("Incorrect password. Please try again.");
+    return { error: "user_not_found" }; // Return an error key if user not found
   }
 
-  return user;
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return { error: "incorrect_password" }; // Return an error key if password doesn't match
+  }
+
+  return user; // Return the user object if login is successful
 };
 
 userSchema.methods.generateOtp = function (type = "email", timezone = "UTC") {
@@ -346,7 +366,9 @@ userSchema.methods.generateOtp = function (type = "email", timezone = "UTC") {
       user.otpInfo.phoneNumberOtp.otpRequestTimestamp = now;
     }
   } else if (otpRequestCount >= allowedOtpRequests) {
-    throw new Error("Too many OTP requests. Please try again later.");
+    if (process.env.NODE_ENV == "prod") {
+      return { error: "too_many_otp_requests" }; // Return an error key if too many OTP requests
+    }
   }
 
   // Increment the OTP request count

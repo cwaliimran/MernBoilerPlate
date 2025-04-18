@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "9516f1d5-7809-487e-9a46-3c68c67b60a9",
+		"_postman_id": "758ea71e-dc29-4711-9f6d-79db901851b6",
 		"name": "Borrow",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3104553"
+		"_exporter_id": "3104553",
+		"_collection_link": "https://warped-escape-145657.postman.co/workspace/Borrow-Tools-Rental-App~88d01ce5-8670-44fb-8558-a0df26164e9d/collection/3104553-758ea71e-dc29-4711-9f6d-79db901851b6?action=share&source=collection_link&creator=3104553"
 	},
 	"item": [
 		{
@@ -18,21 +19,36 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
+									"});",
 									"",
+									"pm.test(\"Set Variables on Environment and Collection\", function () {",
+									"    var jsonData = pm.response.json();",
 									"",
-									"    pm.test(\"Token\", function () {",
-									"        var jsonData = pm.response.json();",
-									"        pm.environment.set(\"token\", jsonData.data.token);",
+									"    // Setting environment variables",
+									"    pm.environment.set(\"token\", jsonData.data.token);",
+									"    pm.environment.set(\"email\", jsonData.data.basicInfo.email);",
+									"    pm.environment.set(\"phoneNumber\", jsonData.data.basicInfo.phoneNumber);",
 									"",
-									"        pm.environment.set(\"email\", jsonData.data.basicInfo.email);",
+									"    // Setting collection variables",
+									"    pm.collectionVariables.set(\"token\", jsonData.data.token);",
+									"    pm.collectionVariables.set(\"email\", jsonData.data.basicInfo.email);",
+									"    pm.collectionVariables.set(\"phoneNumber\", jsonData.data.basicInfo.phoneNumber);",
 									"",
-									"        pm.environment.set(\"phoneNumber\", jsonData.data.basicInfo.phoneNumber);",
-									"",
-									"        let requestBody = JSON.parse(pm.request.body.raw);",
-									"        pm.environment.set(\"password\", requestBody.password);",
-									"        ",
-									"    });",
+									"    // Extracting password from request body",
+									"    let requestBody = JSON.parse(pm.request.body.raw);",
+									"    pm.environment.set(\"password\", requestBody.password);",
+									"    pm.collectionVariables.set(\"password\", requestBody.password);",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -143,6 +159,12 @@
 									"",
 									"        pm.environment.set(\"emailOtp\", jsonData.data.otpInfo.emailOtp.otp);",
 									"",
+									"        pm.collectionVariables.set(\"email\", jsonData.data.basicInfo.email);",
+									"",
+									"        pm.collectionVariables.set(\"phoneNumber\", jsonData.data.basicInfo.phoneNumber);",
+									"",
+									"        pm.collectionVariables.set(\"emailOtp\", jsonData.data.otpInfo.emailOtp.otp);",
+									"",
 									"        let requestBody = JSON.parse(pm.request.body.raw);",
 									"        pm.environment.set(\"password\", requestBody.password);",
 									"        ",
@@ -208,7 +230,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"profileIcon\": \"noimage.png\",\n    \"name\": \"{{$randomUserName}}\",\n    \"email\": \"{{randomEmail}}\",\n    \"phoneNumber\": \"{{randomPhoneNumber}}\",\n    \"password\": \"123456\",\n    \"deviceType\": \"android\", //andoird/ios\n    \"deviceId\": \"ciMKqgnjRiaQvxj2Q9T5_g:APA91bF3LLhH7TQoNny1mS-c2iK_PZ4vZXG8bKSavzUuAqQ8A2ipLSf6yWzMhvNCr9fH44mPVUukNytAYQtorUJGo2FYkdV4yusDDL_-fri0yKZ18THsh8w1hVlJ_5a_YWNFbXO479ci\", //device id from firebase fcm\n    \"timezone\": \"Asia/Karachi\",\n    \"location\": {\n        \"coordinates\": [\n            -74.005974,\n            40.712776\n        ], // [longitude, latitude]\n        \"fullAddress\": \"13th Street 47, NY 10011, USA\"\n    }\n}",
+							"raw": "{\n    \"profileIcon\": \"noimage.png\",\n    \"name\": \"{{$randomUserName}}\",\n    \"email\": \"heroj35277@andinews.com\",\n    \"phoneNumber\": \"+923005098780\",\n    \"password\": \"123456\",\n    \"deviceType\": \"android\", //andoird/ios\n    \"userType\":\"user\",\n    \"deviceId\": \"ciMKqgnjRiaQvxj2Q9T5_g:APA91bF3LLhH7TQoNny1mS-c2iK_PZ4vZXG8bKSavzUuAqQ8A2ipLSf6yWzMhvNCr9fH44mPVUukNytAYQtorUJGo2FYkdV4yusDDL_-fri0yKZ18THsh8w1hVlJ_5a_YWNFbXO479ci\", //device id from firebase fcm\n    \"timezone\": \"Asia/Karachi\",\n    \"location\": {\n        \"coordinates\": [\n            -74.005974,\n            40.712776\n        ], // [longitude, latitude]\n        \"fullAddress\": \"13th Street 47, NY 10011, USA\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -325,7 +347,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"provider\": \"google\", //\"google\", \"facebook\", \"apple\",\n    \"socialId\": \"12345678901234567892\",\n    \"email\": \"em7@gmail.com\",\n    \"name\": \"{{$randomFullName}}\",\n    \"deviceId\": \"device12345\",\n    \"deviceType\": \"ios\",\n    \"timezone\": \"Asia/Karachi\"\n}",
+							"raw": "{\n    \"provider\": \"google\", //\"google\", \"facebook\", \"apple\",\n    \"socialId\": \"12345678901234567892\",\n    \"email\": \"sheikhabubakar0032@gmail.com\",\n    \"name\": \"{{$randomFullName}}\",\n    \"deviceId\": \"device12345\",\n    \"deviceType\": \"ios\",\n    \"timezone\": \"Asia/Karachi\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -436,6 +458,149 @@
 					"response": []
 				},
 				{
+					"name": "Earnings",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}users/earnings?month=01-2025",
+							"host": [
+								"{{url}}users"
+							],
+							"path": [
+								"earnings"
+							],
+							"query": [
+								{
+									"key": "month",
+									"value": "01-2025"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get other User Profile",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}users/profile/:userId",
+							"host": [
+								"{{url}}users"
+							],
+							"path": [
+								"profile",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "67c0379c56169773a13532de"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "get other User Profile",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}users/profile/:userId",
+									"host": [
+										"{{url}}users"
+									],
+									"path": [
+										"profile",
+										":userId"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "677d0ac4bbb5b581c9465b48"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx/1.24.0 (Ubuntu)"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 16 Jan 2025 13:54:56 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "2180"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"884-rEGBJkx25K3vBRXy3H7DfqxWMdA\""
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"User fetched successfully\",\n    \"data\": {\n        \"basicInfo\": {\n            \"_id\": \"677d0ac4bbb5b581c9465b48\",\n            \"profileIcon\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/95c7994d-8dd5-4e65-8af6-16260de61146.jpg\",\n            \"name\": \"Black Boy\",\n            \"phoneNumber\": \"+923276268678\"\n        },\n        \"contactInfo\": {\n            \"phoneNumber\": \"+923276268678\",\n            \"verificationStatus\": \"pending\",\n            \"location\": {\n                \"type\": \"Point\",\n                \"coordinates\": [\n                    74.40459430000001,\n                    31.5553527\n                ],\n                \"fullAddress\": \"Tajpura Scheme Road, Mian Amiruddin Park Lahore, Pakistan\"\n            }\n        },\n        \"recentReviews\": [\n            {\n                \"_id\": \"6787886c106e86511d8f5745\",\n                \"reviewType\": \"user\",\n                \"object\": \"677d0ac4bbb5b581c9465b48\",\n                \"bookingId\": \"677d12a0bbb5b581c9465c91\",\n                \"subject\": {\n                    \"_id\": \"677d09ebbbb5b581c9465b21\",\n                    \"profileIcon\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/59373a8f-cb45-4371-b33d-8a8e51eb0f16.jpg\",\n                    \"name\": \"Young Boy\"\n                },\n                \"rating\": 3,\n                \"comment\": \"Bbbbb\",\n                \"createdAt\": \"2025-01-15T10:05:32.501Z\",\n                \"updatedAt\": \"2025-01-15T10:05:32.501Z\",\n                \"__v\": 0\n            },\n            {\n                \"_id\": \"67867d67515885ab797ffd88\",\n                \"reviewType\": \"user\",\n                \"object\": \"677d0ac4bbb5b581c9465b48\",\n                \"bookingId\": \"67863517515885ab797ff4bf\",\n                \"subject\": {\n                    \"_id\": \"678529c2515885ab797fee98\",\n                    \"profileIcon\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/ddf2cc7f-dd99-4ac7-bab2-2a85113f7510.jpg\",\n                    \"name\": \"joi\"\n                },\n                \"rating\": 3.5,\n                \"comment\": \"dasdasd\",\n                \"createdAt\": \"2025-01-14T15:06:15.655Z\",\n                \"updatedAt\": \"2025-01-14T15:06:15.655Z\",\n                \"__v\": 0\n            },\n            {\n                \"_id\": \"67867c2d515885ab797ffcca\",\n                \"reviewType\": \"user\",\n                \"object\": \"677d0ac4bbb5b581c9465b48\",\n                \"bookingId\": \"67863c1e515885ab797ff554\",\n                \"subject\": {\n                    \"_id\": \"678529c2515885ab797fee98\",\n                    \"profileIcon\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/ddf2cc7f-dd99-4ac7-bab2-2a85113f7510.jpg\",\n                    \"name\": \"joi\"\n                },\n                \"rating\": 4,\n                \"comment\": \"dsadsadasd\",\n                \"createdAt\": \"2025-01-14T15:01:01.100Z\",\n                \"updatedAt\": \"2025-01-14T15:01:01.100Z\",\n                \"__v\": 0\n            },\n            {\n                \"_id\": \"67866a79515885ab797ff91b\",\n                \"reviewType\": \"user\",\n                \"object\": \"677d0ac4bbb5b581c9465b48\",\n                \"bookingId\": \"677d1449bbb5b581c9465d0f\",\n                \"subject\": {\n                    \"_id\": \"677d09ebbbb5b581c9465b21\",\n                    \"profileIcon\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/59373a8f-cb45-4371-b33d-8a8e51eb0f16.jpg\",\n                    \"name\": \"Young Boy\"\n                },\n                \"rating\": 3,\n                \"comment\": \"Great person, very useful!\",\n                \"createdAt\": \"2025-01-14T13:45:29.126Z\",\n                \"updatedAt\": \"2025-01-14T13:45:29.126Z\",\n                \"__v\": 0\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
 					"name": "updateProfile",
 					"event": [
 						{
@@ -464,7 +629,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Mr John1\",\n    \"profileIcon\" : \"noimage1.png\",\n    \"phoneNumber\": \"+923005098445\",\n    \"location\": {\n        \"coordinates\": [\n            -74.005975,\n            40.712777\n        ], // [longitude, latitude]\n        \"fullAddress\": \"14th Street 47, NY 10011, NYK\"\n    }\n}",
+							"raw": "{\n    // \"name\": \"Black Boy\",\n    // \"profileIcon\" : \"noimage1.png\",\n    // \"phoneNumber\": \"+923005098445\",\n    // \"location\": {\n    //     \"coordinates\": [\n    //     74.4269084,31.5021841\n        \n    //     ], // [longitude, latitude]\n    //     \"fullAddress\": \"Homeless\"\n    // },\n    // \"distanceUnit\":\"miles\" //km, miles\n    \"currencySymbol\" : \"ƒ\",\n    \"currencyCode\" : \"ANG\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -558,8 +723,10 @@
 									"    pm.test(\"Token\", function () {",
 									"        var jsonData = pm.response.json();",
 									"        pm.environment.set(\"token\", jsonData.data.token);",
-									"",
-									"          pm.environment.set(\"resetToken\", jsonData.data.resetToken);",
+									"        pm.environment.set(\"resetToken\", jsonData.data.resetToken);",
+									"        pm.collectionVariables.set(\"token\", jsonData.data.token);",
+									"        pm.collectionVariables.set(\"resetToken\", jsonData.data.resetToken);",
+									"          ",
 									"    });",
 									"});"
 								],
@@ -818,7 +985,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"phoneNumber\": \"{{phoneNumber}}\",\n    \"otp\":\"{{phoneNumberOtp}}\"\n}",
+							"raw": "{\n    \"phoneNumber\": \"{{phoneNumber}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1298,7 +1465,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"frontImage\": \"image4.png\",\n    \"backImage\": \"image3.png\"\n}",
+							"raw": "{\n    \"frontImage\": \"image00.png\",\n    \"backImage\": \"image3.png\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1316,9 +1483,226 @@
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "Conversation/Messages",
+			"item": [
+				{
+					"name": "chats",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}conversation/chats?page=1&limit=10",
+							"host": [
+								"{{url}}conversation"
+							],
+							"path": [
+								"chats"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "keyword",
+									"value": "a",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
 				},
 				{
-					"name": "update documents status",
+					"name": "messages",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}conversation/:userId/messages?page=1&limit=10",
+							"host": [
+								"{{url}}conversation"
+							],
+							"path": [
+								":userId",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "6716498a57cae4c9e878b6a5"
+								}
+							]
+						},
+						"description": "/:otherUserId/messages"
+					},
+					"response": []
+				},
+				{
+					"name": "delete message",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}conversation/message/:messageId",
+							"host": [
+								"{{url}}conversation"
+							],
+							"path": [
+								"message",
+								":messageId"
+							],
+							"variable": [
+								{
+									"key": "messageId",
+									"value": "6715ef3463c0864b47a49021"
+								}
+							]
+						},
+						"description": "/message/:messageId"
+					},
+					"response": []
+				},
+				{
+					"name": "sendMessage",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"messageType\": \"text\", //text, file, audio\n  \"messageContent\": \"Hello, how are you?\",\n  \"mediaUrl\": null\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}conversation/:userId/message",
+							"host": [
+								"{{url}}conversation"
+							],
+							"path": [
+								":userId",
+								"message"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "674da2689b6b7e527ef58f00"
+								}
+							]
+						},
+						"description": "/:otherUserId/message"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Subscriptions",
+			"item": [
+				{
+					"name": "subscriptions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}users/subscriptions",
+							"host": [
+								"{{url}}users"
+							],
+							"path": [
+								"subscriptions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "addOrUpdateSubscription",
 					"event": [
 						{
 							"listen": "test",
@@ -1342,11 +1726,11 @@
 						}
 					],
 					"request": {
-						"method": "PATCH",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"status\": \"verified\" //[\"pending\", \"submitted\", \"verified\", \"rejected\"],\n}",
+							"raw": "{\n    \"type\" : \"plan2\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1354,18 +1738,125 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}documents/:userId/status",
+							"raw": "{{url}}users/add-update-subscription",
 							"host": [
-								"{{url}}documents"
+								"{{url}}users"
 							],
 							"path": [
-								":userId",
-								"status"
+								"add-update-subscription"
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Listing",
+			"item": [
+				{
+					"name": "get",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}listings/",
+							"host": [
+								"{{url}}listings"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}listings/:id",
+							"host": [
+								"{{url}}listings"
+							],
+							"path": [
+								":id"
 							],
 							"variable": [
 								{
-									"key": "userId",
-									"value": "671605852c9a28aa9f24a24a"
+									"key": "id",
+									"value": "67b31d660858f08521f1bd11"
 								}
 							]
 						}
@@ -1373,7 +1864,111 @@
 					"response": []
 				},
 				{
-					"name": "delete documents",
+					"name": "add",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Drill 2\",\n  \"description\": \"My New Drill\",\n  \"images\": [\n    \"image1.jpg\",\n    \"image3.jpg\"\n  ],\n  \"pickupTime\": \"10:30 PM\",\n  \"pickupEndTime\": \"10:30 PM\",\n  \"totalValue\": 200,\n  \"openForRent\": true,\n  \"rentPerHour\": 0.3,\n  \"rentPerDay\": 50,\n  \"instantBooking\": \"no\" //yes,no\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}listings/",
+							"host": [
+								"{{url}}listings"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Drill Machine uptodate\",\n    \"description\": \"A powerful drill machine for all your construction needs.\",\n    \"images\": [\n        \"image1.jpg\",\n        \"image2.jpg\"\n    ],\n    \"pickupTime\": \"10:30 AM\",\n    \"pickupEndTime\": \"10:30 PM\",\n    \"totalValue\": 200,\n    \"openForRent\": true,\n    \"rentPerHour\": 10,\n    \"rentPerDay\": 50,\n    \"status\": \"booked\" // or \"booked\" or \"deleted\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}listings/:id",
+							"host": [
+								"{{url}}listings"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "67b31d660858f08521f1bd11"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
 					"event": [
 						{
 							"listen": "test",
@@ -1409,21 +2004,3165 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}documents/:userId/",
+							"raw": "{{url}}listings/:id",
 							"host": [
-								"{{url}}documents"
+								"{{url}}listings"
 							],
 							"path": [
-								":userId",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "6716205e0aa4c1660d733a94"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sample crud",
+			"item": [
+				{
+					"name": "get",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}tools/",
+							"host": [
+								"{{url}}tools"
+							],
+							"path": [
 								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}tools/:id",
+							"host": [
+								"{{url}}tools"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Drill Machine\",\n  \"description\": \"A powerful drill machine for all your construction needs.\",\n  \"images\": [\n    \"image1.jpg\",\n    \"image2.jpg\"\n  ],\n  \"pickupTime\": \"9 AM - 5 PM\",\n  \"totalValue\": 200,\n  \"openForRent\": true,\n  \"isAvailable\": true,\n  \"rentPerHour\": 10,\n  \"rentPerDay\": 50\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}tools/",
+							"host": [
+								"{{url}}tools"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Drill Machine\",\n  \"description\": \"A powerful drill machine for all your construction needs.\",\n  \"images\": [\n    \"image1.jpg\",\n    \"image2.jpg\"\n  ],\n  \"pickupTime\": \"9 AM - 5 PM\",\n  \"totalValue\": 200,\n  \"openForRent\": true,\n  \"isAvailable\": true,\n  \"rentPerHour\": 10,\n  \"rentPerDay\": 50\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}user/:id",
+							"host": [
+								"{{url}}user"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}tools/:id",
+							"host": [
+								"{{url}}tools"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Home",
+			"item": [
+				{
+					"name": "get",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}home/?page=1&limit=10&radius=2",
+							"host": [
+								"{{url}}home"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "Drill",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "radius",
+									"value": "2",
+									"description": "km"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "get",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}home/?page=1&limit=10&radius=20",
+									"host": [
+										"{{url}}home"
+									],
+									"path": [
+										""
+									],
+									"query": [
+										{
+											"key": "search",
+											"value": "Drill",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "radius",
+											"value": "20"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "517"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"205-KnYQWyTpQIbnV+HgLw7EbJpnv8A\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 24 Oct 2024 04:17:26 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [
+								{
+									"expires": "Invalid Date"
+								}
+							],
+							"body": "{\n    \"message\": \"Tools fetched successfully\",\n    \"data\": [\n        {\n            \"_id\": \"6719acb845eb162e6d665db8\",\n            \"name\": \"Drill Machine\",\n            \"description\": \"A powerful drill machine for all your construction needs.\",\n            \"images\": [\n                \"image1.jpg\",\n                \"image2.jpg\"\n            ],\n            \"rentPerHour\": 10,\n            \"rentPerDay\": 50,\n            \"creator\": {\n                \"profileIcon\": \"noimage1.png\",\n                \"name\": \"Mr John1\",\n                \"location\": {\n                    \"type\": \"Point\",\n                    \"coordinates\": [\n                        -73.76913514082922,\n                        40.71262451366864\n                    ],\n                    \"fullAddress\": \"14th Street 47, NY 10011, NYK\"\n                }\n            },\n            \"distance\": 14.98,\n            \"unit\": \"km\"\n        }\n    ],\n    \"meta\": {\n        \"currentPage\": 1,\n        \"totalPages\": 1,\n        \"limit\": 10\n    }\n}"
+						},
+						{
+							"name": "get 1",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}home/?page=1&limit=10",
+									"host": [
+										"{{url}}home"
+									],
+									"path": [
+										""
+									],
+									"query": [
+										{
+											"key": "search",
+											"value": "Drill",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "radius",
+											"value": "25",
+											"description": "km",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1545"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"609-n4uyy3p1yc3dD2bCLDZjezZXjMU\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 16 Jan 2025 06:36:40 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Listings fetched successfully\",\n    \"data\": [\n        {\n            \"name\": \"Drill 2\",\n            \"description\": \"My New Drill\",\n            \"images\": [\n                {\n                    \"url\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/image1.jpg\",\n                    \"name\": \"image1.jpg\"\n                },\n                {\n                    \"url\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/image3.jpg\",\n                    \"name\": \"image3.jpg\"\n                }\n            ],\n            \"pickupTime\": \"\",\n            \"pickupEndTime\": \"\",\n            \"totalValue\": 0,\n            \"openForRent\": true,\n            \"rentPerHour\": 10,\n            \"rentPerDay\": 50,\n            \"creator\": \"674da2689b6b7e527ef58f00\",\n            \"status\": \"available\",\n            \"_id\": \"67878af2f0e2768dffe1bc51\",\n            \"currencySymbol\": \"$\"\n        },\n        {\n            \"name\": \"Drill 2\",\n            \"description\": \"My New Drill\",\n            \"images\": [\n                {\n                    \"url\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/image1.jpg\",\n                    \"name\": \"image1.jpg\"\n                },\n                {\n                    \"url\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/image3.jpg\",\n                    \"name\": \"image3.jpg\"\n                }\n            ],\n            \"pickupTime\": \"\",\n            \"pickupEndTime\": \"\",\n            \"totalValue\": 0,\n            \"openForRent\": true,\n            \"rentPerHour\": 10,\n            \"rentPerDay\": 50,\n            \"creator\": \"674da2689b6b7e527ef58f00\",\n            \"status\": \"available\",\n            \"_id\": \"67878af3f0e2768dffe1bc53\",\n            \"currencySymbol\": \"$\"\n        },\n        {\n            \"name\": \"My Drill Machine\",\n            \"description\": \"A powerful drill machine for all your construction needs.\",\n            \"images\": [\n                {\n                    \"url\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/image1.jpg\",\n                    \"name\": \"image1.jpg\"\n                },\n                {\n                    \"url\": \"https://borrowappbucket.s3.us-east-1.amazonaws.com/image3.jpg\",\n                    \"name\": \"image3.jpg\"\n                }\n            ],\n            \"pickupTime\": \"\",\n            \"pickupEndTime\": \"\",\n            \"totalValue\": 0,\n            \"openForRent\": true,\n            \"rentPerHour\": 10,\n            \"rentPerDay\": 50,\n            \"creator\": \"677f7b54e5bbec505e29b600\",\n            \"status\": \"available\",\n            \"_id\": \"677f82352f955741100a2f40\",\n            \"currencySymbol\": \"$\"\n        }\n    ],\n    \"meta\": {\n        \"currentPage\": 1,\n        \"totalPages\": 1,\n        \"totalRecords\": 3,\n        \"limit\": 10\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Languages",
+			"item": [
+				{
+					"name": "get",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}languages/",
+							"host": [
+								"{{url}}languages"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"French\",\n  \"code\": \"fr\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}languages/",
+							"host": [
+								"{{url}}languages"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"French\",\n    \"code\": \"fr\",\n    \"flag\": \"🇵🇫\",\n    \"active\": true,\n    \"transliteration\": \"Français\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}languages/:id",
+							"host": [
+								"{{url}}languages"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "6718c46b55c3c7f75d4f38bf"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "update user language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"languageId\": \"6718c1237113a68b70e505f3\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}languages/user",
+							"host": [
+								"{{url}}languages"
+							],
+							"path": [
+								"user"
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}languages/:id",
+							"host": [
+								"{{url}}languages"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "6718c1b1366863bc641b9c7b"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cards management",
+			"item": [
+				{
+					"name": "get",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}cards/",
+							"host": [
+								"{{url}}cards"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "get",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}cards/",
+									"host": [
+										"{{url}}cards"
+									],
+									"path": [
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "322"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"142-feGXs23RstigGbcGMbosVjJE5oc\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 16:20:02 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Cards fetched successfully\",\n    \"data\": [\n        {\n            \"_id\": \"6717d0164c0fc7aafa6f60ab\",\n            \"userId\": \"6715f5e2193b9c8bd69482a8\",\n            \"name\": \"John Doe\",\n            \"cardType\": \"Visa\",\n            \"cardNumber\": \"4111111111111111\",\n            \"defaultCard\": true,\n            \"cvc\": \"123\",\n            \"expiry\": \"12/24\",\n            \"createdAt\": \"2024-10-22T16:17:26.551Z\",\n            \"updatedAt\": \"2024-10-22T16:17:26.551Z\",\n            \"__v\": 0\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "get details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}cards/:id",
+							"host": [
+								"{{url}}cards"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "674e77b80c60d0e2aef1a996"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "get details",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}cards/:id",
+									"host": [
+										"{{url}}cards"
+									],
+									"path": [
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "6717d0164c0fc7aafa6f60ab"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "319"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"13f-x0IE7n38dLiLXeyZbTMYKvJ1Ur0\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 16:20:11 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Card fetched successfully\",\n    \"data\": {\n        \"_id\": \"6717d0164c0fc7aafa6f60ab\",\n        \"userId\": \"6715f5e2193b9c8bd69482a8\",\n        \"name\": \"John Doe\",\n        \"cardType\": \"Visa\",\n        \"cardNumber\": \"4111111111111111\",\n        \"defaultCard\": true,\n        \"cvc\": \"123\",\n        \"expiry\": \"12/24\",\n        \"createdAt\": \"2024-10-22T16:17:26.551Z\",\n        \"updatedAt\": \"2024-10-22T16:17:26.551Z\",\n        \"__v\": 0\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "add",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"cardType\": \"Visa\",//\"Visa\", \"MasterCard\", \"American Express\", \"Discover\", \"Stripe\"\n  \"cardNumber\": \"4111111111111112\",\n  \"cvc\": \"123\",\n  \"expiry\": \"12/24\",\n  \"defaultCard\": true\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}cards/",
+							"host": [
+								"{{url}}cards"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": [
+						{
+							"name": "add",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Doe\",\n  \"cardType\": \"Visa\",//\"Visa\", \"MasterCard\", \"American Express\", \"Discover\", \"Stripe\"\n  \"cardNumber\": \"4111111111111111\",\n  \"cvc\": \"123\",\n  \"expiry\": \"12/24\",\n  \"defaultCard\": true\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}cards/",
+									"host": [
+										"{{url}}cards"
+									],
+									"path": [
+										""
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "317"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"13d-V59ImotD2xQx7POPeddApUhFoBY\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 16:17:26 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Card added successfully\",\n    \"data\": {\n        \"userId\": \"6715f5e2193b9c8bd69482a8\",\n        \"name\": \"John Doe\",\n        \"cardType\": \"Visa\",\n        \"cardNumber\": \"4111111111111111\",\n        \"defaultCard\": true,\n        \"cvc\": \"123\",\n        \"expiry\": \"12/24\",\n        \"_id\": \"6717d0164c0fc7aafa6f60ab\",\n        \"createdAt\": \"2024-10-22T16:17:26.551Z\",\n        \"updatedAt\": \"2024-10-22T16:17:26.551Z\",\n        \"__v\": 0\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"expiry\": \"12/26\",\n  \"defaultCard\": false\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}cards/:id",
+							"host": [
+								"{{url}}cards"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "6717d0164c0fc7aafa6f60ab"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": [
+						{
+							"name": "update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"expiry\": \"12/26\",\n  \"defaultCard\": false\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}cards/:id",
+									"host": [
+										"{{url}}cards"
+									],
+									"path": [
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "6717d0164c0fc7aafa6f60ab"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "320"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"140-lQbkV9z4oM08EsHGGiQgtRQcl2k\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 16:20:31 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Card updated successfully\",\n    \"data\": {\n        \"_id\": \"6717d0164c0fc7aafa6f60ab\",\n        \"userId\": \"6715f5e2193b9c8bd69482a8\",\n        \"name\": \"John Doe\",\n        \"cardType\": \"Visa\",\n        \"cardNumber\": \"4111111111111111\",\n        \"defaultCard\": false,\n        \"cvc\": \"123\",\n        \"expiry\": \"12/26\",\n        \"createdAt\": \"2024-10-22T16:17:26.551Z\",\n        \"updatedAt\": \"2024-10-22T16:20:31.523Z\",\n        \"__v\": 0\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\" : \"plan2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}cards/:id",
+							"host": [
+								"{{url}}cards"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "6717d0e0d856e51f3448c0ed"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": [
+						{
+							"name": "delete",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"type\" : \"plan2\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}cards/:id",
+									"host": [
+										"{{url}}cards"
+									],
+									"path": [
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "6717d0e0d856e51f3448c0ed"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "39"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"27-bPHK30fDZrOCyHVvxL9FpJWt3P4\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 16:20:57 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Card deleted successfully\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Bookings",
+			"item": [
+				{
+					"name": "Bookings/RentalsWithUser",
+					"item": [
+						{
+							"name": "active bookings with user",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}bookings/user/:userId?page=1&limit=10",
+									"host": [
+										"{{url}}bookings"
+									],
+									"path": [
+										"user",
+										":userId"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "674da2689b6b7e527ef58f00"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "active rentals with user",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}bookings/rentals/user/:userId?page=1&limit=10",
+									"host": [
+										"{{url}}bookings"
+									],
+									"path": [
+										"rentals",
+										"user",
+										":userId"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "6716498a57cae4c9e878b6a5"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "my bookings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/my-bookings?page=1&limit=10&status=booked",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								"my-bookings"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "booked",
+									"description": "\"pendingConfirm\", \"rejected\", \"booked\", \"picked\", \"returned\", \"lost\", \"other\""
+								},
+								{
+									"key": "bookingType",
+									"value": "daily",
+									"description": "\"hourly\", \"daily\"",
+									"disabled": true
+								},
+								{
+									"key": "from",
+									"value": "25-11-2024",
+									"disabled": true
+								},
+								{
+									"key": "to",
+									"value": "30-11-2024",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "my rentals",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/my-rentals?page=1&limit=10",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								"my-rentals"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "booked",
+									"description": "\"booked\", \"picked\", \"returned\", \"lost\", \"other\"",
+									"disabled": true
+								},
+								{
+									"key": "bookingType",
+									"value": "daily",
+									"description": "\"hourly\", \"daily\"",
+									"disabled": true
+								},
+								{
+									"key": "from",
+									"value": "25-11-2024",
+									"disabled": true
+								},
+								{
+									"key": "to",
+									"value": "30-11-2024",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get booking details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:id",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "67b33e7021f314e33020c27c"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get listing availability",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/availability/:toolId?month=2025-02",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								"availability",
+								":toolId"
+							],
+							"query": [
+								{
+									"key": "month",
+									"value": "2025-02"
+								}
+							],
+							"variable": [
+								{
+									"key": "toolId",
+									"value": "6789f497d5512fa694d22dd3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add hourly",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"listingId\": \"67b42d4e3321fdbb15acc8ca\",\n    \"bookingType\": \"hourly\",\n    \"hours\": 1,\n    \"fromDate\": \"2025-08-17\",\n    \"notes\": \"Booking tool for a few hours\"\n    ,\"paymentMethodId\":\"pm_1QgkwfAmdXw3UN6WCLVXiI8A\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "add daily",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"listingId\": \"6789f497d5512fa694d22dd3\",\n  \"bookingType\": \"daily\",\n  \"fromDate\": \"2025-04-25\",\n  \"toDate\": \"2025-04-25\",\n  \"paymentMethodId\":\"pm_1QeaEOAmdXw3UN6Wu4PWRTLQ\",\n  \"notes\": \"Booking tool for a few days\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "pickup",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"images\": [\n    \"pickup_photo1.jpg\",\n    \"pickup_photo2.jpg\",\n    \"pickup_photo3.jpg\"\n  ],\n  \"note\": \"Pickup condition is good. No visible damages.\",\n  \"date\": \"2024-12-03 10:20 AM\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:bookingId/pickup",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":bookingId",
+								"pickup"
+							],
+							"variable": [
+								{
+									"key": "bookingId",
+									"value": "67af1287fb1e03e2f88f4d73"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "approve booking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:bookingId/approve",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":bookingId",
+								"approve"
+							],
+							"variable": [
+								{
+									"key": "bookingId",
+									"value": "67af1287fb1e03e2f88f4d73"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "reject booking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:bookingId/reject",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":bookingId",
+								"reject"
+							],
+							"variable": [
+								{
+									"key": "bookingId",
+									"value": "67a1f15181cb5c74970f7d6f"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "dropoff",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"images\": [\n    \"drop_photo1.jpg\",\n    \"drop_photo2.jpg\",\n    \"drop_photo3.jpg\"\n  ],\n  \"note\": \"Drop of success, condition is good. No visible damages.\",\n  \"date\": \"2024-12-03 10:30 AM\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:bookingId/dropoff",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":bookingId",
+								"dropoff"
+							],
+							"variable": [
+								{
+									"key": "bookingId",
+									"value": "678a29f87a191126438f8733"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "cancel",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:bookingId/cancel",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":bookingId",
+								"cancel"
+							],
+							"query": [
+								{
+									"key": null,
+									"value": "",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "bookingId",
+									"value": "677cf8c433fdfdf59461d5dd"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "paid",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"paymentMethodId\":\"pm_1QeaIBAmdXw3UN6WzSUpwmUI\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:bookingId/paid",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":bookingId",
+								"paid"
+							],
+							"query": [
+								{
+									"key": null,
+									"value": "",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "bookingId",
+									"value": "67af1287fb1e03e2f88f4d73"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\" : \"plan2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}bookings/:id",
+							"host": [
+								"{{url}}bookings"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "674ede47838f0a24cc088985"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Damage reports",
+			"item": [
+				{
+					"name": "get",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}damage-reports?status=pending",
+							"host": [
+								"{{url}}damage-reports"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "pending/completed"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get all users reports",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}damage-reports/all",
+							"host": [
+								"{{url}}damage-reports"
+							],
+							"path": [
+								"all"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "pending/completed",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}damage-reports/:id",
+							"host": [
+								"{{url}}damage-reports"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "67b33e7021f314e33020c27c"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"booking\": \"67b33ef5b767026885ff9cb4\",\n    \"description\": \"The tool is damaged and not functioning properly.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}damage-reports/",
+							"host": [
+								"{{url}}damage-reports"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"completed\",\n  \"completedNote\": \"500$ amount paid by rentee.\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}damage-reports/:id",
+							"host": [
+								"{{url}}damage-reports"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "6784daed9d392f000041e6f7"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}damage-reports/:id",
+							"host": [
+								"{{url}}damage-reports"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "671791bc5522dad5f94ab00f"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reviews",
+			"item": [
+				{
+					"name": "get listing reviews",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}reviews/listing/:listingId?page=1&limit=10",
+							"host": [
+								"{{url}}reviews"
+							],
+							"path": [
+								"listing",
+								":listingId"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							],
+							"variable": [
+								{
+									"key": "listingId",
+									"value": "678661b4d393b0bc16412718"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get user reviews",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}reviews/user/:userId?page=1&limit=10",
+							"host": [
+								"{{url}}reviews"
+							],
+							"path": [
+								"user",
+								":userId"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
 							],
 							"variable": [
 								{
 									"key": "userId",
-									"value": "6715f5e2193b9c8bd69482a8"
+									"value": "6716496757cae4c9e878b698"
 								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "get details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}reviews/:id",
+							"host": [
+								"{{url}}reviews"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "674ebc7961e997a3955b8833"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add listing review",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reviewType\": \"listing\", // \"listing\" or \"user\"\n    \"objectId\": \"67878af2f0e2768dffe1bc51\", // \"listing\" or \"user\" object ID\n    \"bookingId\": \"6786627c49d274e5cda83498\", // booking ID\n    \"rating\": 4.5,\n    \"comment\": \"Great listing, very useful!\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}reviews/",
+							"host": [
+								"{{url}}reviews"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": [
+						{
+							"name": "add success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"reviewType\": \"tool\", // \"tool\" or \"user\"\n    \"objectId\": \"671622670a412f91e8896dea\", // \"tool\" or \"user\" object ID\n    \"bookingId\": \"67165d54fabda7c4066e89ef\", // booking ID\n    \"rating\": 5,\n    \"comment\": \"Great tool, very useful!\"\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}reviews/",
+									"host": [
+										"{{url}}reviews"
+									],
+									"path": [
+										""
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "349"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"15d-AFeSYPRPW9USFNRTpInf0ts2Ltg\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:54:01 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Review created successfully\",\n    \"data\": {\n        \"reviewType\": \"tool\",\n        \"object\": \"671622670a412f91e8896dea\",\n        \"bookingId\": \"67165d54fabda7c4066e89ef\",\n        \"subject\": \"6716498a57cae4c9e878b6a5\",\n        \"rating\": 5,\n        \"comment\": \"Great tool, very useful!\",\n        \"_id\": \"671776397f51b8865f5db1d2\",\n        \"createdAt\": \"2024-10-22T09:54:01.596Z\",\n        \"updatedAt\": \"2024-10-22T09:54:01.596Z\",\n        \"__v\": 0\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "add review user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reviewType\": \"user\", // \"listing\" or \"user\"\n    \"objectId\": \"6716496757cae4c9e878b698\", // \"listing\" or \"user\" object ID\n    \"bookingId\": \"6717def05467a116db7dd643\", // booking ID\n    \"rating\": 3,\n    \"comment\": \"Great person, very useful!\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}reviews/",
+							"host": [
+								"{{url}}reviews"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": [
+						{
+							"name": "add review fail",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"reviewType\": \"user\", // \"tool\" or \"user\"\n    \"objectId\": \"6716496757cae4c9e878b698\", // \"tool\" or \"user\" object ID\n    \"bookingId\": \"67165d54fabda7c4066e89ef\", // booking ID\n    \"rating\": 3,\n    \"comment\": \"Great person, very useful!\"\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}reviews/",
+									"host": [
+										"{{url}}reviews"
+									],
+									"path": [
+										""
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "52"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"34-o85dTMSDRqYX0qMHM4qamxuXjXo\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:53:15 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Review already exists for this booking\"\n}"
+						}
+					]
+				},
+				{
+					"name": "update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rating\": 2,\n  \"comment\": \"Updated comment with better feedback.\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}reviews/:id",
+							"host": [
+								"{{url}}reviews"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "67177482713317156cfd60a1"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\" : \"plan2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}reviews/:id",
+							"host": [
+								"{{url}}reviews"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "67177482713317156cfd60a1"
+								}
+							]
+						},
+						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
 					},
 					"response": []
 				}
@@ -1441,9 +5180,12 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{url}}contact-us?page=1&limit=10",
+									"raw": "{{url}}admin/contact-us?page=1&limit=10",
 									"host": [
-										"{{url}}contact-us"
+										"{{url}}admin"
+									],
+									"path": [
+										"contact-us"
 									],
 									"query": [
 										{
@@ -1453,6 +5195,12 @@
 										{
 											"key": "limit",
 											"value": "10"
+										},
+										{
+											"key": "status",
+											"value": "responded",
+											"description": "\"closed\" //'pending', 'responded', 'resolved', 'closed'",
+											"disabled": true
 										}
 									]
 								}
@@ -1469,7 +5217,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phoneNumber\": \"+923005098554\", //optional\n  \"description\": \"This is a description text\"\n}",
+									"raw": "{\n  \"name\": \"Ali Imran\",\n  \"email\": \"cwaliimran@gmail.com\",\n  \"phoneNumber\": \"+923005098554\", //optional\n  \"description\": \"This is a description text\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1500,12 +5248,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{url}}contact-us/670e5299abdb4d38a49a0de3",
+									"raw": "{{url}}contact-us/674d8d31bffcfdcee589c3ee",
 									"host": [
 										"{{url}}contact-us"
 									],
 									"path": [
-										"670e5299abdb4d38a49a0de3"
+										"674d8d31bffcfdcee589c3ee"
 									]
 								}
 							},
@@ -1548,7 +5296,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{url}}support?page=1&limit=10",
+									"raw": "{{url}}support?page=1&limit=10&status=closed",
 									"host": [
 										"{{url}}support"
 									],
@@ -1560,6 +5308,11 @@
 										{
 											"key": "limit",
 											"value": "10"
+										},
+										{
+											"key": "status",
+											"value": "closed",
+											"description": "\"closed\" //'pending', 'responded', 'resolved', 'closed'"
 										}
 									]
 								}
@@ -1584,58 +5337,6 @@
 									"raw": "{{url}}support",
 									"host": [
 										"{{url}}support"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "put",
-							"request": {
-								"method": "PUT",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"status\": \"closed\" //'pending', 'responded', 'resolved', 'closed'\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{url}}support/670e5488107ae061c6b548c5",
-									"host": [
-										"{{url}}support"
-									],
-									"path": [
-										"670e5488107ae061c6b548c5"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "delete",
-							"request": {
-								"method": "DELETE",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{url}}support/670e5488107ae061c6b548c5",
-									"host": [
-										"{{url}}support"
-									],
-									"path": [
-										"670e5488107ae061c6b548c5"
 									]
 								}
 							},
@@ -1725,12 +5426,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{url}}settings//terms-conditions",
+							"raw": "{{url}}settings/terms-conditions",
 							"host": [
 								"{{url}}settings"
 							],
 							"path": [
-								"",
 								"terms-conditions"
 							]
 						}
@@ -1795,12 +5495,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{url}}settings//about-us",
+							"raw": "{{url}}settings/about-us",
 							"host": [
 								"{{url}}settings"
 							],
 							"path": [
-								"",
 								"about-us"
 							]
 						}
@@ -1865,13 +5564,29 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{url}}settings//privacy-policy",
+							"raw": "{{url}}settings/privacy-policy",
 							"host": [
 								"{{url}}settings"
 							],
 							"path": [
-								"",
 								"privacy-policy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "faqs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}settings/faqs",
+							"host": [
+								"{{url}}settings"
+							],
+							"path": [
+								"faqs"
 							]
 						}
 					},
@@ -1910,7 +5625,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"terms_and_conditions\": \"Your terms and conditions text here.1\",\n    \"about_us\": \"Information about us here.\",\n    \"privacy_policy\": \"Your privacy policy text here.\"\n}\n",
+							"raw": "{\n    \"terms_and_conditions\": \"Your terms and conditions text here.1\",\n    \"about_us\": \"Information about us here.\",\n    \"privacy_policy\": \"Your privacy policy text here.\",\n    \"faqs\": \"Faqs here\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1933,185 +5648,312 @@
 			]
 		},
 		{
-			"name": "Conversation/Messages",
+			"name": "Stripe Account",
 			"item": [
 				{
-					"name": "chats",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
+					"name": "Create",
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "{{url}}conversation/chats?page=1&limit=10",
+							"raw": "{{url}}accounts",
 							"host": [
-								"{{url}}conversation"
+								"{{url}}accounts"
+							]
+						},
+						"description": "if (result.user) { if (result.user.verificationStatus.documents === \"pending\") { return sendResponse({ res, statusCode: 400, translationKey: \"Please submit your documents\", data: { status: \"pending\", }, }); } else if (result.user.verificationStatus.documents === \"submitted\") { return sendResponse({ res, statusCode: 400, translationKey: \"Your documents verification is pending, we will notify you once its status is updated\", data: { status: \"submitted\", }, }); } else if (result.user.verificationStatus.documents === \"rejected\") { return sendResponse({ res, statusCode: 400, translationKey: \"Your documents have been rejected due to \" + result.user.documents.rejectionReason, data: { status: \"rejected\", resaon: result.user.documents.rejectionReason, }, }); } else if (result.user.verificationStatus.documents === \"verified\") { return sendResponse({ res, statusCode: 200, translationKey: \"Your documents have been verified and your account is active\", data: { status: \"verified\", }, }); } }"
+					},
+					"response": [
+						{
+							"name": "Create",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}accounts",
+									"host": [
+										"{{url}}accounts"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "158"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"9e-Id336anL++ou5X4XU6wKGN0N6AU\""
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 15 Jan 2025 06:45:44 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Account created successfully\",\n    \"data\": {\n        \"status\": \"newAccount\",\n        \"onBoardUrl\": \"https://connect.stripe.com/setup/s/acct_1QhQMEPKweYbsqGF/S2CGMBMCLxIz\"\n    }\n}"
+						},
+						{
+							"name": "Create",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}accounts",
+									"host": [
+										"{{url}}accounts"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "70"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"46-n+B+6BHVizH9CuqIWmJ9RgghzDo\""
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 15 Jan 2025 06:46:32 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Please submit your documents\",\n    \"data\": {\n        \"status\": \"pending\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get User Account",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-admin-creation-token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}accounts/user",
+							"host": [
+								"{{url}}accounts"
 							],
 							"path": [
-								"chats"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								},
-								{
-									"key": "",
-									"value": null,
-									"disabled": true
-								}
+								"user"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-admin-creation-token",
+										"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}accounts/user",
+									"host": [
+										"{{url}}accounts"
+									],
+									"path": [
+										"user"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "256"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"100-Tl7a786Q5VJJHw8Grlj3ZT3tW8E\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Jan 2025 11:05:01 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Account fetched successfully\",\n    \"data\": {\n        \"_id\": \"6777d97d775e593559ec197d\",\n        \"user\": \"67778c87aad6c43c475825f0\",\n        \"accountId\": \"acct_1QdA5kAcgQ7ZBgY5\",\n        \"isActive\": true,\n        \"createdAt\": \"2025-01-03T12:35:09.630Z\",\n        \"updatedAt\": \"2025-01-06T11:05:01.690Z\",\n        \"__v\": 0\n    }\n}"
+						}
+					]
 				},
 				{
-					"name": "search chats",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
+					"name": "Get User Methods",
 					"request": {
 						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
+						"header": [
+							{
+								"key": "x-admin-creation-token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+								"type": "text"
 							}
-						},
+						],
 						"url": {
-							"raw": "{{url}}conversation/chats/search?keyword=Joh&page=1&limit=10",
+							"raw": "{{url}}accounts/methods",
 							"host": [
-								"{{url}}conversation"
+								"{{url}}accounts"
 							],
 							"path": [
-								"chats",
-								"search"
-							],
-							"query": [
-								{
-									"key": "keyword",
-									"value": "Joh"
-								},
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								}
+								"methods"
 							]
 						}
 					},
-					"response": []
-				},
-				{
-					"name": "messages",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-admin-creation-token",
+										"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url}}accounts/methods",
+									"host": [
+										"{{url}}accounts"
+									],
+									"path": [
+										"methods"
+									]
 								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}conversation/:userId/messages?page=1&limit=10",
-							"host": [
-								"{{url}}conversation"
-							],
-							"path": [
-								":userId",
-								"messages"
-							],
-							"query": [
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
 								{
-									"key": "page",
-									"value": "1"
+									"key": "X-Powered-By",
+									"value": "Express"
 								},
 								{
-									"key": "limit",
-									"value": "10"
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "826"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"33a-wqAd+gLr9x4XC+d+nVAYwLvrsv0\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Jan 2025 12:13:19 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
 								}
 							],
-							"variable": [
-								{
-									"key": "userId",
-									"value": "6715e9624a9d551bdbb1b6ca"
-								}
-							]
-						},
-						"description": "/:otherUserId/messages"
-					},
-					"response": []
+							"cookie": [],
+							"body": "{\n    \"message\": \"Fetched successfully\",\n    \"data\": [\n        {\n            \"id\": \"pm_1QeEzDAmdXw3UN6WfZJQz01P\",\n            \"object\": \"payment_method\",\n            \"allow_redisplay\": \"unspecified\",\n            \"billing_details\": {\n                \"address\": {\n                    \"city\": null,\n                    \"country\": null,\n                    \"line1\": null,\n                    \"line2\": null,\n                    \"postal_code\": \"10010\",\n                    \"state\": null\n                },\n                \"email\": null,\n                \"name\": null,\n                \"phone\": null\n            },\n            \"card\": {\n                \"brand\": \"visa\",\n                \"checks\": {\n                    \"address_line1_check\": null,\n                    \"address_postal_code_check\": \"pass\",\n                    \"cvc_check\": \"pass\"\n                },\n                \"country\": \"US\",\n                \"display_brand\": \"visa\",\n                \"exp_month\": 4,\n                \"exp_year\": 2025,\n                \"fingerprint\": \"iCmktTxB7foL5rG0\",\n                \"funding\": \"credit\",\n                \"generated_from\": null,\n                \"last4\": \"4242\",\n                \"networks\": {\n                    \"available\": [\n                        \"visa\"\n                    ],\n                    \"preferred\": null\n                },\n                \"regulated_status\": \"unregulated\",\n                \"three_d_secure_usage\": {\n                    \"supported\": true\n                },\n                \"wallet\": null\n            },\n            \"created\": 1736164847,\n            \"customer\": \"cus_RXJEzi0lkhMNS4\",\n            \"livemode\": false,\n            \"metadata\": {},\n            \"radar_options\": {},\n            \"type\": \"card\"\n        }\n    ]\n}"
+						}
+					]
 				},
 				{
-					"name": "delete message",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}conversation/message/:messageId",
-							"host": [
-								"{{url}}conversation"
-							],
-							"path": [
-								"message",
-								":messageId"
-							],
-							"variable": [
-								{
-									"key": "messageId",
-									"value": "6715ef3463c0864b47a49021"
-								}
-							]
-						},
-						"description": "/message/:messageId"
-					},
-					"response": []
-				},
-				{
-					"name": "sendMessage",
+					"name": "Attach Method",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "x-admin-creation-token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"messageType\": \"text\",\n  \"messageContent\": \"Hello, how are you?\",\n  \"mediaUrl\": null\n}\n",
+							"raw": "{\r\n    \"paymentMethodId\":\"pm_1QeFBqAmdXw3UN6W2McX2amQ\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2119,79 +5961,234 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}conversation/:userId/message",
+							"raw": "{{url}}accounts/methods",
 							"host": [
-								"{{url}}conversation"
+								"{{url}}accounts"
 							],
 							"path": [
-								":userId",
-								"message"
-							],
-							"variable": [
-								{
-									"key": "userId",
-									"value": "6715e9624a9d551bdbb1b6ca"
-								}
+								"methods"
 							]
-						},
-						"description": "/:otherUserId/message"
+						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-admin-creation-token",
+										"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"paymentMethodId\":\"pm_1QeFBqAmdXw3UN6W2McX2amQ\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}accounts/methods",
+									"host": [
+										"{{url}}accounts"
+									],
+									"path": [
+										"methods"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1620"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"654-i03Om1yUmBm9uHqoTzMt3k2cHxI\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Jan 2025 12:14:09 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"added_success\",\n    \"data\": [\n        {\n            \"id\": \"pm_1QeFBqAmdXw3UN6W2McX2amQ\",\n            \"object\": \"payment_method\",\n            \"allow_redisplay\": \"unspecified\",\n            \"billing_details\": {\n                \"address\": {\n                    \"city\": null,\n                    \"country\": null,\n                    \"line1\": null,\n                    \"line2\": null,\n                    \"postal_code\": \"44333\",\n                    \"state\": null\n                },\n                \"email\": null,\n                \"name\": null,\n                \"phone\": null\n            },\n            \"card\": {\n                \"brand\": \"mastercard\",\n                \"checks\": {\n                    \"address_line1_check\": null,\n                    \"address_postal_code_check\": \"pass\",\n                    \"cvc_check\": \"pass\"\n                },\n                \"country\": \"US\",\n                \"display_brand\": \"mastercard\",\n                \"exp_month\": 4,\n                \"exp_year\": 2044,\n                \"fingerprint\": \"bdePcESYRYpnmsAO\",\n                \"funding\": \"credit\",\n                \"generated_from\": null,\n                \"last4\": \"4444\",\n                \"networks\": {\n                    \"available\": [\n                        \"mastercard\"\n                    ],\n                    \"preferred\": null\n                },\n                \"regulated_status\": \"unregulated\",\n                \"three_d_secure_usage\": {\n                    \"supported\": true\n                },\n                \"wallet\": null\n            },\n            \"created\": 1736165630,\n            \"customer\": \"cus_RXJEzi0lkhMNS4\",\n            \"livemode\": false,\n            \"metadata\": {},\n            \"radar_options\": {},\n            \"type\": \"card\"\n        },\n        {\n            \"id\": \"pm_1QeEzDAmdXw3UN6WfZJQz01P\",\n            \"object\": \"payment_method\",\n            \"allow_redisplay\": \"unspecified\",\n            \"billing_details\": {\n                \"address\": {\n                    \"city\": null,\n                    \"country\": null,\n                    \"line1\": null,\n                    \"line2\": null,\n                    \"postal_code\": \"10010\",\n                    \"state\": null\n                },\n                \"email\": null,\n                \"name\": null,\n                \"phone\": null\n            },\n            \"card\": {\n                \"brand\": \"visa\",\n                \"checks\": {\n                    \"address_line1_check\": null,\n                    \"address_postal_code_check\": \"pass\",\n                    \"cvc_check\": \"pass\"\n                },\n                \"country\": \"US\",\n                \"display_brand\": \"visa\",\n                \"exp_month\": 4,\n                \"exp_year\": 2025,\n                \"fingerprint\": \"iCmktTxB7foL5rG0\",\n                \"funding\": \"credit\",\n                \"generated_from\": null,\n                \"last4\": \"4242\",\n                \"networks\": {\n                    \"available\": [\n                        \"visa\"\n                    ],\n                    \"preferred\": null\n                },\n                \"regulated_status\": \"unregulated\",\n                \"three_d_secure_usage\": {\n                    \"supported\": true\n                },\n                \"wallet\": null\n            },\n            \"created\": 1736164847,\n            \"customer\": \"cus_RXJEzi0lkhMNS4\",\n            \"livemode\": false,\n            \"metadata\": {},\n            \"radar_options\": {},\n            \"type\": \"card\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Detach Method",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "x-admin-creation-token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"paymentMethodId\":\"pm_1QeFBqAmdXw3UN6W2McX2amQ\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}accounts/methods",
+							"host": [
+								"{{url}}accounts"
+							],
+							"path": [
+								"methods"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "x-admin-creation-token",
+										"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4tY3JlYXRpb24iLCJpYXQiOjE3MjQ1NDgzMTIsImV4cCI6MTcyNDU1MTkxMn0.4boSGYHU34L2rH3RbSPJKdcWTgFwm6invgwNAyuEsNM",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"paymentMethodId\":\"pm_1QeFBqAmdXw3UN6W2McX2amQ\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}accounts/methods",
+									"host": [
+										"{{url}}accounts"
+									],
+									"path": [
+										"methods"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "826"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"33a-sXrMYqwPTXvuVhvsxq+VVQ9gHxo\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Jan 2025 12:21:51 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Updated successfully\",\n    \"data\": [\n        {\n            \"id\": \"pm_1QeEzDAmdXw3UN6WfZJQz01P\",\n            \"object\": \"payment_method\",\n            \"allow_redisplay\": \"unspecified\",\n            \"billing_details\": {\n                \"address\": {\n                    \"city\": null,\n                    \"country\": null,\n                    \"line1\": null,\n                    \"line2\": null,\n                    \"postal_code\": \"10010\",\n                    \"state\": null\n                },\n                \"email\": null,\n                \"name\": null,\n                \"phone\": null\n            },\n            \"card\": {\n                \"brand\": \"visa\",\n                \"checks\": {\n                    \"address_line1_check\": null,\n                    \"address_postal_code_check\": \"pass\",\n                    \"cvc_check\": \"pass\"\n                },\n                \"country\": \"US\",\n                \"display_brand\": \"visa\",\n                \"exp_month\": 4,\n                \"exp_year\": 2025,\n                \"fingerprint\": \"iCmktTxB7foL5rG0\",\n                \"funding\": \"credit\",\n                \"generated_from\": null,\n                \"last4\": \"4242\",\n                \"networks\": {\n                    \"available\": [\n                        \"visa\"\n                    ],\n                    \"preferred\": null\n                },\n                \"regulated_status\": \"unregulated\",\n                \"three_d_secure_usage\": {\n                    \"supported\": true\n                },\n                \"wallet\": null\n            },\n            \"created\": 1736164847,\n            \"customer\": \"cus_RXJEzi0lkhMNS4\",\n            \"livemode\": false,\n            \"metadata\": {},\n            \"radar_options\": {},\n            \"type\": \"card\"\n        }\n    ]\n}"
+						}
+					]
 				}
 			]
 		},
 		{
-			"name": "Subscriptions",
+			"name": "Common",
 			"item": [
 				{
-					"name": "subscriptions",
+					"name": "Upload file s3",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}user/subscriptions",
-							"host": [
-								"{{url}}user"
-							],
-							"path": [
-								"subscriptions"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "addOrUpdateSubscription",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
+									"var template = `",
+									"<style type=\"text/css\">",
+									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}",
+									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}",
+									"    .tftable tr {background-color:#ffffff;}",
+									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}",
+									"    .tftable tr:hover {background-color:#e0ffff;}",
+									"</style>",
+									"",
+									"<table class=\"tftable\" border=\"1\">",
+									"    <tr>",
+									"        <th>File</th>",
+									"        <th>File URL</th>",
+									"        <th>File Extension</th>",
+									"    </tr>",
+									"    ",
+									"    {{#each response.data}}",
+									"        <tr>",
+									"            <td>{{file}}</td>",
+									"            <td>{{fileUrl}}</td>",
+									"            <td>{{fileExtension}}</td>",
+									"        </tr>",
+									"    {{/each}}",
+									"</table>",
+									"`;",
+									"",
+									"function constructVisualizerPayload() {",
+									"    return {response: pm.response.json()}",
+									"}",
+									"",
+									"pm.visualizer.set(template, constructVisualizerPayload());"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -2200,20 +6197,83 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
+								"exec": [],
+								"type": "text/javascript"
 							}
 						}
 					],
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "content-type",
+								"value": "image/png",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"type": "file",
+									"src": [
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 10.png",
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 21.png",
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 20.png",
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 19.png",
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 18.png",
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 17.png",
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 10.png",
+										"/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 1.png",
+										"/Users/s/Downloads/bhg-riding-lawn-mowers-test-john-deere-s100-abigail-mercer-02-1-37e3a0925c014c5fa2b254baf0118289.jpeg",
+										"/Users/s/Downloads/6.png",
+										"/Users/s/Downloads/Lunch Buddy Mockup 5 copy 2.png",
+										"/Users/s/Downloads/unnamed-10.png",
+										"/Users/s/Downloads/unnamed-9.png",
+										"/Users/s/Downloads/unnamed-8.png",
+										"/Users/s/Downloads/Lunch Buddy Mockup 5 copy 8.png",
+										"/Users/s/Downloads/Lunch Buddy Mockup 5 copy 9.png",
+										"/Users/s/Downloads/Lunch Buddy Mockup 5 copy 10.png"
+									]
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{url}}upload/s3",
+							"host": [
+								"{{url}}upload"
+							],
+							"path": [
+								"s3"
+							]
+						},
+						"description": "Uploading single/multiple files is possible"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete file s3",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "content-type",
+								"value": "image/png",
+								"type": "text",
+								"disabled": true
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"type\" : \"plan2\"\n}",
+							"raw": "{\n    \"fileKey\": \"ef2ffde1-3a3a-4eac-9004-e4b3f1a04f45.png\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2221,15 +6281,47 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}user/add-update-subscription",
+							"raw": "{{url}}upload/s3",
 							"host": [
-								"{{url}}user"
+								"{{url}}upload"
 							],
 							"path": [
-								"add-update-subscription"
+								"s3"
 							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete multiple files s3",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "content-type",
+								"value": "image/png",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fileKey\": [\"0831007f-a726-46b4-bb29-24830735d093.png\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
-						"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+						"url": {
+							"raw": "{{url}}upload/s3",
+							"host": [
+								"{{url}}upload"
+							],
+							"path": [
+								"s3"
+							]
+						}
 					},
 					"response": []
 				}
@@ -2286,7 +6378,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n \t\"email\": \"testuser8929@gmail.com\",\n\t\"password\": \"123456\",\n\t\"deviceType\": \"android\", //andoird/ios\n\t\"deviceId\": \"ciMKqgnjRiaQvxj2Q9T5_g:APA91bF3LLhH7TQoNny1mS-c2iK_PZ4vZXG8bKSavzUuAqQ8A2ipLSf6yWzMhvNCr9fH44mPVUukNytAYQtorUJGo2FYkdV4yusDDL_-fri0yKZ18THsh8w1hVlJ_5a_YWNFbXO479ci\", //device id from firebase fcm\n\t\"timezone\": \"Asia/Karachi\"\n}",
+									"raw": "{\n \t\"email\": \"testuser2@gmail.com\",\n\t\"password\": \"123456\",\n\t\"deviceType\": \"android\", //andoird/ios\n\t\"deviceId\": \"ciMKqgnjRiaQvxj2Q9T5_g:APA91bF3LLhH7TQoNny1mS-c2iK_PZ4vZXG8bKSavzUuAqQ8A2ipLSf6yWzMhvNCr9fH44mPVUukNytAYQtorUJGo2FYkdV4yusDDL_-fri0yKZ18THsh8w1hVlJ_5a_YWNFbXO479ci\", //device id from firebase fcm\n\t\"timezone\": \"Asia/Karachi\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2337,8 +6429,11 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"exec": [],
-										"type": "text/javascript"
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -2347,7 +6442,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n \t\"email\": \"m5@gmail.com\",\n\t\"password\": \"123456\",\n\t\"deviceType\": \"android\", //andoird/ios\n\t\"deviceId\": \"ciMKqgnjRiaQvxj2Q9T5_g:APA91bF3LLhH7TQoNny1mS-c2iK_PZ4vZXG8bKSavzUuAqQ8A2ipLSf6yWzMhvNCr9fH44mPVUukNytAYQtorUJGo2FYkdV4yusDDL_-fri0yKZ18THsh8w1hVlJ_5a_YWNFbXO479ci\", //device id from firebase fcm\n\t\"timezone\": \"Asia/Karachi\"\n}",
+									"raw": "{\n \t\"email\": \"heroj35277@andinews.com\",\n\t\"password\": \"123456\",\n\t\"deviceType\": \"android\", //andoird/ios\n\t\"deviceId\": \"ciMKqgnjRiaQvxj2Q9T5_g:APA91bF3LLhH7TQoNny1mS-c2iK_PZ4vZXG8bKSavzUuAqQ8A2ipLSf6yWzMhvNCr9fH44mPVUukNytAYQtorUJGo2FYkdV4yusDDL_-fri0yKZ18THsh8w1hVlJ_5a_YWNFbXO479ci\", //device id from firebase fcm\n\t\"timezone\": \"Asia/Karachi\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2385,6 +6480,7 @@
 											"    pm.test(\"Token\", function () {",
 											"        var jsonData = pm.response.json();",
 											"        pm.environment.set(\"token\", jsonData.data.token);",
+											"        pm.collectionVariables.set(\"token\", jsonData.data.token);",
 											"        ",
 											"    });",
 											"});"
@@ -2599,7 +6695,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"email\": \"{{adminEmail}}\",\n    \"otp\":\"623944\"\n}",
+									"raw": "{\n    \"email\": \"{{adminEmail}}\",\n    \"otp\":\"196440\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2805,12 +6901,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{url}}communication//send-email-sgrid",
+									"raw": "{{url}}communications/send-email-sgrid",
 									"host": [
-										"{{url}}communication"
+										"{{url}}communications"
 									],
 									"path": [
-										"",
 										"send-email-sgrid"
 									]
 								},
@@ -2833,12 +6928,66 @@
 									}
 								},
 								"url": {
-									"raw": "{{url}}communication/send-otp-pin-point",
+									"raw": "{{url}}communications/send-otp-pin-point",
 									"host": [
-										"{{url}}communication"
+										"{{url}}communications"
 									],
 									"path": [
 										"send-otp-pin-point"
+									]
+								},
+								"description": "### Send Email\n\nThis endpoint allows you to send an email to the specified recipients.\n\n#### Request Body\n\n- title (string, optional): The title of the email.\n    \n- emails (array of strings): The list of email addresses to which the email will be sent.\n    \n- subject (string, required): The subject of the email.\n    \n- body (string, required): The body content of the email.\n    \n- config (object):\n    \n    - fromEmail (string, required): The sender's email address.\n        \n    - isHtml (boolean, required): Indicates whether the email body is in HTML format.\n        \n\n#### Response\n\nThe response is in JSON format with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"message\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "send-otp-vonage",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phoneNumber\": \"+923138012799\",\n//    \"phoneNumber\": \"+923204797713\",\n  \"otp\": \"123544\"\n  \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}communications/send-otp-vonage",
+									"host": [
+										"{{url}}communications"
+									],
+									"path": [
+										"send-otp-vonage"
+									]
+								},
+								"description": "### Send Email\n\nThis endpoint allows you to send an email to the specified recipients.\n\n#### Request Body\n\n- title (string, optional): The title of the email.\n    \n- emails (array of strings): The list of email addresses to which the email will be sent.\n    \n- subject (string, required): The subject of the email.\n    \n- body (string, required): The body content of the email.\n    \n- config (object):\n    \n    - fromEmail (string, required): The sender's email address.\n        \n    - isHtml (boolean, required): Indicates whether the email body is in HTML format.\n        \n\n#### Response\n\nThe response is in JSON format with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"message\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "send-otp-somalian",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phoneNumber\": \"+27719999941\",\n//    \"phoneNumber\": \"+923204797713\",\n  \"otp\": \"908974\"\n  \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}communications/send-otp-somalian",
+									"host": [
+										"{{url}}communications"
+									],
+									"path": [
+										"send-otp-somalian"
 									]
 								},
 								"description": "### Send Email\n\nThis endpoint allows you to send an email to the specified recipients.\n\n#### Request Body\n\n- title (string, optional): The title of the email.\n    \n- emails (array of strings): The list of email addresses to which the email will be sent.\n    \n- subject (string, required): The subject of the email.\n    \n- body (string, required): The body content of the email.\n    \n- config (object):\n    \n    - fromEmail (string, required): The sender's email address.\n        \n    - isHtml (boolean, required): Indicates whether the email body is in HTML format.\n        \n\n#### Response\n\nThe response is in JSON format with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"message\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
@@ -2860,12 +7009,39 @@
 									}
 								},
 								"url": {
-									"raw": "{{url}}communication/send-email-aws",
+									"raw": "{{url}}communications/send-email-aws",
 									"host": [
-										"{{url}}communication"
+										"{{url}}communications"
 									],
 									"path": [
 										"send-email-aws"
+									]
+								},
+								"description": "### Send Email\n\nThis endpoint allows you to send an email to the specified recipients.\n\n#### Request Body\n\n- title (string, optional): The title of the email.\n    \n- emails (array of strings): The list of email addresses to which the email will be sent.\n    \n- subject (string, required): The subject of the email.\n    \n- body (string, required): The body content of the email.\n    \n- config (object):\n    \n    - fromEmail (string, required): The sender's email address.\n        \n    - isHtml (boolean, required): Indicates whether the email body is in HTML format.\n        \n\n#### Response\n\nThe response is in JSON format with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"message\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
+							"name": "send Email Brevo",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Borrow App\",\n  \"emails\": [\"cwaliimrandev@gmail.com\"],\n  \"subject\": \"Test email by Borrow App\",\n  \"body\": \"<p>This is the body of the email.</p>\",\n  \"config\": {\n    \"fromEmail\": \"support@myborrowapp.com\",\n    \"isHtml\": true\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}communications/send-email-brevo",
+									"host": [
+										"{{url}}communications"
+									],
+									"path": [
+										"send-email-brevo"
 									]
 								},
 								"description": "### Send Email\n\nThis endpoint allows you to send an email to the specified recipients.\n\n#### Request Body\n\n- title (string, optional): The title of the email.\n    \n- emails (array of strings): The list of email addresses to which the email will be sent.\n    \n- subject (string, required): The subject of the email.\n    \n- body (string, required): The body content of the email.\n    \n- config (object):\n    \n    - fromEmail (string, required): The sender's email address.\n        \n    - isHtml (boolean, required): Indicates whether the email body is in HTML format.\n        \n\n#### Response\n\nThe response is in JSON format with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"message\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
@@ -2879,7 +7055,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"recipients\": [\n    {\n      \"deviceId\": \"ciMKqgnjRiaQvxj2Q9T5_g:APA91bF3LLhH7TQoNny1mS-c2iK_PZ4vZXG8bKSavzUuAqQ8A2ipLSf6yWzMhvNCr9fH44mPVUukNytAYQtorUJGo2FYkdV4yusDDL_-fri0yKZ18THsh8w1hVlJ_5a_YWNFbXO479ci\",\n      \"deviceType\": \"android\"\n    },\n    {\n      \"deviceId\": \"fcm_token_2\",\n      \"deviceType\": \"ios\"\n    },\n    {\n      \"deviceId\": \"fcm_token_3\",\n      \"deviceType\": \"android\"\n    }\n  ],\n  \"title\": \"Push Notification\",\n  \"body\": \"Your custom notification message here\",\n  \"data\":{\n    \"type\": \"message\"\n  }\n}\n",
+									"raw": "{\n  \"recipients\": [\n    {\n      \"deviceId\": \"f80WhDR5TKiJtjLcv_4ciM:APA91bF0j6xEXW6FQGpRYvQZTFTK7590RjUjsARzzjfhIxoClr1c1b2Jyp3UqCOErUy6660dxmPt4boxPNLLQ2lRs3v40Z-ZYtaPCWPpu-4SSsvoC9l_kJk\",\n      \"deviceType\": \"android\"\n    },\n    {\n      \"deviceId\": \"fcm_token_2\",\n      \"deviceType\": \"ios\"\n    },\n    {\n      \"deviceId\": \"fcm_token_3\",\n      \"deviceType\": \"android\"\n    }\n  ],\n  \"title\": \"Push Notification\",\n  \"body\": \"Your custom notification message here\",\n  \"data\":{\n    \"type\": \"message\"\n  }\n}\n    ",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2887,9 +7063,9 @@
 									}
 								},
 								"url": {
-									"raw": "{{url}}communication/send-notification",
+									"raw": "{{url}}communications/send-notification",
 									"host": [
-										"{{url}}communication"
+										"{{url}}communications"
 									],
 									"path": [
 										"send-notification"
@@ -2901,91 +7077,1187 @@
 					]
 				},
 				{
-					"name": "Common",
+					"name": "Admin Panel",
 					"item": [
 						{
-							"name": "Upload file s3",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "content-type",
-										"value": "image/png",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "files",
-											"type": "file",
-											"src": "/Users/s/Desktop/Development/_FreeLancing/samples_mobile/Circle Images/Circle Images/avatars/Mask Group 24.png"
+							"name": "Support Requests",
+							"item": [
+								{
+									"name": "support-requests",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{url}}admin/support-requests?status=closed&page=1",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"support-requests"
+											],
+											"query": [
+												{
+													"key": "status",
+													"value": "closed",
+													"description": "'pending', 'responded', 'resolved', 'closed'"
+												},
+												{
+													"key": "page",
+													"value": "1"
+												}
+											]
 										}
-									]
+									},
+									"response": []
 								},
-								"url": {
-									"raw": "{{url}}upload/s3",
-									"host": [
-										"{{url}}upload"
-									],
-									"path": [
-										"s3"
-									]
+								{
+									"name": "put",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"status\": \"closed\" //'pending', 'responded', 'resolved', 'closed'\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/support-requests/6715f380f5c42af5b8843a72",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"support-requests",
+												"6715f380f5c42af5b8843a72"
+											]
+										}
+									},
+									"response": []
 								},
-								"description": "Uploading single/multiple files is possible"
-							},
-							"response": []
+								{
+									"name": "delete",
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/support-requests/670e5488107ae061c6b548c5",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"support-requests",
+												"670e5488107ae061c6b548c5"
+											]
+										}
+									},
+									"response": []
+								}
+							]
 						},
 						{
-							"name": "Delete file s3",
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "content-type",
-										"value": "image/png",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"fileKey\": \"ef2ffde1-3a3a-4eac-9004-e4b3f1a04f45.png\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
+							"name": "contactUs",
+							"item": [
+								{
+									"name": "get",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{url}}admin/contact-us?page=1&limit=10",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"contact-us"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "1"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												},
+												{
+													"key": "status",
+													"value": "closed",
+													"description": "'pending', 'responded', 'resolved', 'closed'",
+													"disabled": true
+												},
+												{
+													"key": "keyword",
+													"value": "this",
+													"disabled": true
+												}
+											]
 										}
-									}
+									},
+									"response": []
 								},
+								{
+									"name": "put",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"status\": \"closed\" //'pending', 'responded', 'resolved', 'closed'\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/contact-us/6718c53c810f6e2d4e509eaa",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"contact-us",
+												"6718c53c810f6e2d4e509eaa"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "delete",
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/contact-us/670e5299abdb4d38a49a0de3",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"contact-us",
+												"670e5299abdb4d38a49a0de3"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Faq's",
+							"item": [
+								{
+									"name": "get",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disableBodyPruning": true
+									},
+									"request": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/faqs",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"faqs"
+											]
+										}
+									},
+									"response": [
+										{
+											"name": "get",
+											"originalRequest": {
+												"method": "GET",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{url}}admin/faqs",
+													"host": [
+														"{{url}}admin"
+													],
+													"path": [
+														"faqs"
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "X-Powered-By",
+													"value": "Express"
+												},
+												{
+													"key": "Access-Control-Allow-Origin",
+													"value": "*"
+												},
+												{
+													"key": "Content-Type",
+													"value": "application/json; charset=utf-8"
+												},
+												{
+													"key": "Content-Length",
+													"value": "327"
+												},
+												{
+													"key": "ETag",
+													"value": "W/\"147-YLG42IIaNjQX78OWq54MiaYO1jQ\""
+												},
+												{
+													"key": "Date",
+													"value": "Tue, 14 Jan 2025 15:24:31 GMT"
+												},
+												{
+													"key": "Connection",
+													"value": "keep-alive"
+												},
+												{
+													"key": "Keep-Alive",
+													"value": "timeout=5"
+												}
+											],
+											"cookie": [],
+											"body": "{\n    \"message\": \"Faqs fetched successfully\",\n    \"data\": [\n        {\n            \"_id\": \"6786816732aa1eb77e7c82dd\",\n            \"question\": \"How to use app\",\n            \"answer\": \"Follow below link.. http://youtube.com/learnborrow\",\n            \"createdAt\": \"2025-01-14T15:23:19.099Z\",\n            \"updatedAt\": \"2025-01-14T15:23:56.073Z\",\n            \"__v\": 0\n        }\n    ],\n    \"meta\": {\n        \"currentPage\": 1,\n        \"totalPages\": 1,\n        \"totalRecords\": 1,\n        \"limit\": 10\n    }\n}"
+										}
+									]
+								},
+								{
+									"name": "add",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"question\": \"How to use app\",\n    \"answer\": \"Follow below link.. http://youtube.com\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/faqs",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"faqs"
+											]
+										},
+										"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+									},
+									"response": [
+										{
+											"name": "add",
+											"originalRequest": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"question\": \"How to use app\",\n    \"answer\": \"Follow below link.. http://youtube.com\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{url}}admin/faqs",
+													"host": [
+														"{{url}}admin"
+													],
+													"path": [
+														"faqs"
+													]
+												}
+											},
+											"status": "Created",
+											"code": 201,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "X-Powered-By",
+													"value": "Express"
+												},
+												{
+													"key": "Access-Control-Allow-Origin",
+													"value": "*"
+												},
+												{
+													"key": "Content-Type",
+													"value": "application/json; charset=utf-8"
+												},
+												{
+													"key": "Content-Length",
+													"value": "244"
+												},
+												{
+													"key": "ETag",
+													"value": "W/\"f4-7aOUgRsuAlXBRIedVK7Vr9xvwDo\""
+												},
+												{
+													"key": "Date",
+													"value": "Tue, 14 Jan 2025 15:24:03 GMT"
+												},
+												{
+													"key": "Connection",
+													"value": "keep-alive"
+												},
+												{
+													"key": "Keep-Alive",
+													"value": "timeout=5"
+												}
+											],
+											"cookie": [],
+											"body": "{\n    \"message\": \"Faq created successfully\",\n    \"data\": {\n        \"question\": \"How to use app\",\n        \"answer\": \"Follow below link.. http://youtube.com\",\n        \"_id\": \"6786819332aa1eb77e7c82e3\",\n        \"createdAt\": \"2025-01-14T15:24:03.366Z\",\n        \"updatedAt\": \"2025-01-14T15:24:03.366Z\",\n        \"__v\": 0\n    }\n}"
+										}
+									]
+								},
+								{
+									"name": "update",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"question\": \"How to use app\",\n    \"answer\": \"Follow below link.. http://youtube.com/learnborrow\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/faqs/:id",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"faqs",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id",
+													"value": "6786816732aa1eb77e7c82dd"
+												}
+											]
+										},
+										"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+									},
+									"response": [
+										{
+											"name": "update",
+											"originalRequest": {
+												"method": "PUT",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"question\": \"How to use app\",\n    \"answer\": \"Follow below link.. http://youtube.com/learnborrow\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{url}}admin/faqs/:id",
+													"host": [
+														"{{url}}admin"
+													],
+													"path": [
+														"faqs",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "6786816732aa1eb77e7c82dd"
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "X-Powered-By",
+													"value": "Express"
+												},
+												{
+													"key": "Access-Control-Allow-Origin",
+													"value": "*"
+												},
+												{
+													"key": "Content-Type",
+													"value": "application/json; charset=utf-8"
+												},
+												{
+													"key": "Content-Length",
+													"value": "256"
+												},
+												{
+													"key": "ETag",
+													"value": "W/\"100-MOfxqXQ5WKTNYSVcusN1473aGhc\""
+												},
+												{
+													"key": "Date",
+													"value": "Tue, 14 Jan 2025 15:24:25 GMT"
+												},
+												{
+													"key": "Connection",
+													"value": "keep-alive"
+												},
+												{
+													"key": "Keep-Alive",
+													"value": "timeout=5"
+												}
+											],
+											"cookie": [],
+											"body": "{\n    \"message\": \"Faq updated successfully\",\n    \"data\": {\n        \"_id\": \"6786816732aa1eb77e7c82dd\",\n        \"question\": \"How to use app\",\n        \"answer\": \"Follow below link.. http://youtube.com/learnborrow\",\n        \"createdAt\": \"2025-01-14T15:23:19.099Z\",\n        \"updatedAt\": \"2025-01-14T15:23:56.073Z\",\n        \"__v\": 0\n    }\n}"
+										}
+									]
+								},
+								{
+									"name": "delete",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/faqs/:id",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"faqs",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id",
+													"value": "6786819332aa1eb77e7c82e3"
+												}
+											]
+										},
+										"description": "{ \"message\": \"Invalid subscription type. Valid types are: sparkConnection, bloomAgainEssentials, healingHearts\"}"
+									},
+									"response": [
+										{
+											"name": "delete",
+											"originalRequest": {
+												"method": "DELETE",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{url}}admin/faqs/:id",
+													"host": [
+														"{{url}}admin"
+													],
+													"path": [
+														"faqs",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "6786819332aa1eb77e7c82e3"
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "X-Powered-By",
+													"value": "Express"
+												},
+												{
+													"key": "Access-Control-Allow-Origin",
+													"value": "*"
+												},
+												{
+													"key": "Content-Type",
+													"value": "application/json; charset=utf-8"
+												},
+												{
+													"key": "Content-Length",
+													"value": "38"
+												},
+												{
+													"key": "ETag",
+													"value": "W/\"26-Pb+ir59dGG6u55moIogOLVi9FiI\""
+												},
+												{
+													"key": "Date",
+													"value": "Tue, 14 Jan 2025 15:24:12 GMT"
+												},
+												{
+													"key": "Connection",
+													"value": "keep-alive"
+												},
+												{
+													"key": "Keep-Alive",
+													"value": "timeout=5"
+												}
+											],
+											"cookie": [],
+											"body": "{\n    \"message\": \"Faq deleted successfully\"\n}"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "Documents",
+							"item": [
+								{
+									"name": "documents-verification",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{url}}admin/documents-verification?status=submitted&page=1&limit=20",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"documents-verification"
+											],
+											"query": [
+												{
+													"key": "status",
+													"value": "submitted",
+													"description": "\"pending\", \"submitted\", \"verified\", \"rejected\""
+												},
+												{
+													"key": "page",
+													"value": "1"
+												},
+												{
+													"key": "keyword",
+													"value": "Neha",
+													"disabled": true
+												},
+												{
+													"key": "limit",
+													"value": "20"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "update documents status",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PATCH",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"status\": \"verified\" //[\"pending\", \"submitted\", \"verified\", \"rejected\"],\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/documents/:userId/status",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"documents",
+												":userId",
+												"status"
+											],
+											"variable": [
+												{
+													"key": "userId",
+													"value": "678a03f07a191126438f84f1"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "delete documents",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}admin/documents/:userId/",
+											"host": [
+												"{{url}}admin"
+											],
+											"path": [
+												"documents",
+												":userId",
+												""
+											],
+											"variable": [
+												{
+													"key": "userId",
+													"value": "67875fac8d253766e148beb1"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Dashboard",
+							"request": {
+								"method": "GET",
+								"header": [],
 								"url": {
-									"raw": "{{url}}upload/s3",
+									"raw": "{{url}}admin/dashboard",
 									"host": [
-										"{{url}}upload"
+										"{{url}}admin"
 									],
 									"path": [
-										"s3"
+										"dashboard"
 									]
 								}
 							},
 							"response": []
 						},
 						{
-							"name": "Delete multiple files s3",
+							"name": "Users stats/Area Installed",
 							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "content-type",
-										"value": "image/png",
-										"type": "text",
-										"disabled": true
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/user-stats-by-region?year=2025",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"user-stats-by-region"
+									],
+									"query": [
+										{
+											"key": "year",
+											"value": "2025"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "top-rated-listings",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/top-rated-listings",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"top-rated-listings"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "top-rated-users",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/top-rated-users",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"top-rated-users"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "all users",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/all-users?page=1",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"all-users"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "suspended",
+											"description": " \"active\", \"inactive\",",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "keyword",
+											"value": "testuser1@gmail.com",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "all-listings",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/all-listings?status=available&page=1&keyword=Drill",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"all-listings"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "available",
+											"description": "\"available\", \"booked\", \"deleted\""
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "keyword",
+											"value": "Drill"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "damage-requests",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/damage-requests?status=pending&page=1&keyword=damag",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"damage-requests"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "pending",
+											"description": "\"pending\", \"completed\""
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "keyword",
+											"value": "damag"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "listings-by-user",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/listings-by-user/:userId?page=1",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"listings-by-user",
+										":userId"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										}
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "6716498a57cae4c9e878b6a5"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "user-bookings",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/user-bookings/:userId?page=1",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"user-bookings",
+										":userId"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										}
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "6716498a57cae4c9e878b6a5"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "user-rentals",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/user-rentals/:userId?page=1",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"user-rentals",
+										":userId"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										}
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "6716498a57cae4c9e878b6a5"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "user-earnings",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/user-earnings/:userId?page=1",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"user-earnings",
+										":userId"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										}
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "6716498a57cae4c9e878b6a5"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "transactions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}admin/transactions?page=1&paymentStatus=paid",
+									"host": [
+										"{{url}}admin"
+									],
+									"path": [
+										"transactions"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "paymentStatus",
+											"value": "paid",
+											"description": "\"pending\", \"paid\""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update user account state",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
 									}
-								],
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"fileKey\": [\"0831007f-a726-46b4-bb29-24830735d093.png\"]\n}",
+									"raw": "{\n  \"status\": \"active\"\n\n//           \"active\",\n//           \"inactive\",\n//           \"suspended\",\n//           \"softDeleted\",\n//           \"hardDeleted\",\n//           \"restricted\",\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2993,12 +8265,20 @@
 									}
 								},
 								"url": {
-									"raw": "{{url}}upload/s3",
+									"raw": "{{url}}admin/users/:userId/account-state",
 									"host": [
-										"{{url}}upload"
+										"{{url}}admin"
 									],
 									"path": [
-										"s3"
+										"users",
+										":userId",
+										"account-state"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "67a30ed6ffd28a771241668b"
+										}
 									]
 								}
 							},
@@ -3024,6 +8304,26 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://hamariweb.com/islam/lahore_ramadan-timing63.aspx",
+					"protocol": "https",
+					"host": [
+						"hamariweb",
+						"com"
+					],
+					"path": [
+						"islam",
+						"lahore_ramadan-timing63.aspx"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"auth": {
@@ -3056,6 +8356,32 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "email",
+			"value": "admin@borrowapp.com"
+		},
+		{
+			"key": "phoneNumber",
+			"value": ""
+		},
+		{
+			"key": "password",
+			"value": "o2wbor#gna10"
+		},
+		{
+			"key": "emailOtp",
+			"value": ""
+		},
+		{
+			"key": "resetToken",
+			"value": ""
 		}
 	]
 }

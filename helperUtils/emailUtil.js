@@ -1,11 +1,14 @@
 const sgMail = require("@sendgrid/mail");
 const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
-const { PinpointClient, SendMessagesCommand } = require("@aws-sdk/client-pinpoint");
+const {
+  PinpointClient,
+  SendMessagesCommand,
+} = require("@aws-sdk/client-pinpoint");
 
+var SibApiV3Sdk = require("sib-api-v3-sdk");
 
 // Define the default app name
 const DEFAULT_APP_NAME = "biolderPlate";
-
 
 const sesClient = new SESClient({
   region: process.env.AWS_EMAIL_REGION,
@@ -38,7 +41,10 @@ const sesClient = new SESClient({
  */
 const sendEmailViaAwsSes = async (emails, subject, body, config = {}) => {
   try {
-    const { fromEmail = `biolderPlate"; App <${process.env.AWS_SENDER_EMAIL}>`, isHtml = true } = config;
+    const {
+      fromEmail = `biolderPlate"; App <${process.env.AWS_SENDER_EMAIL}>`,
+      isHtml = true,
+    } = config;
 
     const params = {
       Source: fromEmail,
@@ -66,7 +72,6 @@ const sendEmailViaAwsSes = async (emails, subject, body, config = {}) => {
   }
 };
 
-
 // Initialize the Pinpoint client
 const pinpointClient = new PinpointClient({
   region: process.env.AWS_EMAIL_REGION,
@@ -76,7 +81,6 @@ const pinpointClient = new PinpointClient({
   },
 });
 
-
 /**
  * Send an SMS using Amazon Pinpoint
  * @param {string} phoneNumber - The recipient's phone number in E.164 format (+1234567890)
@@ -84,7 +88,6 @@ const pinpointClient = new PinpointClient({
  * @returns {Promise} - A promise that resolves to the result of the Pinpoint SendMessagesCommand
  */
 const sendSmsViaPinpoint = async (phoneNumber, message) => {
-
   try {
     const params = {
       ApplicationId: process.env.AWS_PINPOINT_APP_ID,
@@ -97,8 +100,8 @@ const sendSmsViaPinpoint = async (phoneNumber, message) => {
         MessageConfiguration: {
           SMSMessage: {
             Body: message,
-            MessageType: "TRANSACTIONAL",  // Use "PROMOTIONAL" for marketing messages
-            SenderId: process.env.AWS_PINPOINT_SENDER_ID,       // Optional: Use if you have a sender ID
+            MessageType: "TRANSACTIONAL", // Use "PROMOTIONAL" for marketing messages
+            SenderId: process.env.AWS_PINPOINT_SENDER_ID, // Optional: Use if you have a sender ID
           },
         },
       },
@@ -113,7 +116,6 @@ const sendSmsViaPinpoint = async (phoneNumber, message) => {
     throw error;
   }
 };
-
 
 // Initialize SendGrid with your API key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -160,22 +162,37 @@ const sendEmailViaSgrid = async (title, emails, subject, body, config = {}) => {
     throw error;
   }
 };
-/* 
 
-     // Send OTP email
-     const emailSubject = 'Welcome to biolderPlate"; - Your OTP Code';
-     const emailBody = otpEmailTemplate(otp); // Generate HTML content
-     const emailConfig = {
-       fromEmail: 'user1@gmail.com',
-       isHtml: true,
-     };
- 
-     await sendEmail(null, ["user1dev@gmail.com"], emailSubject, emailBody, emailConfig);
- 
-*/
+
+const sendEmailViaBrevo = async (emails, subject, body, config = {}) => {
+  var defaultClient = SibApiV3Sdk.ApiClient.instance;
+  // Get the API key
+  var apiKey = defaultClient.authentications["api-key"];
+  apiKey.apiKey = process.env.BREVO_EMAIL_API_KEY; // Use the environment variable for the API key
+
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+  // Initial assignment from parameters
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.htmlContent = body;
+  sendSmtpEmail.sender = { email: "support@myborrowapp.com", name: "Borrow Support" };
+
+  // Ensure to field is dynamically updated
+  sendSmtpEmail.to = emails.map(email => ({ email }));
+  try {
+    // Send email
+   const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log("Email paused in dev environment", data);
+  } catch (error) {
+    console.error("Error sending email:", error);
+    // throw new Error (error.response.body)
+  }
+};
+
 
 module.exports = {
   sendEmailViaAwsSes,
   sendSmsViaPinpoint,
   sendEmailViaSgrid,
+  sendEmailViaBrevo,
 };

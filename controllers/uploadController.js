@@ -22,17 +22,15 @@ const uploadFile = (req, res) => {
             sendResponse({
                 res,
                 statusCode: 400,
-                translationKey: "File upload failed",
+                translationKey: "file_upload_1",
                 error: err,
-                translateMessage : false,
             });
         } else {
             if (req.file == undefined) {
                 sendResponse({
                     res,
                     statusCode: 400,
-                    translationKey: "No file selected!",
-                    translateMessage : false,
+                    translationKey: "no_file",
                 });
             } else {
                 const baseUrl = `${process.env.S3_BASE_URL}/`;
@@ -40,7 +38,7 @@ const uploadFile = (req, res) => {
                 sendResponse({
                     res,
                     statusCode: 200,
-                    translationKey: "File uploaded successfully",
+                    translationKey: "file_uploaded",
                     data: {
                         message: "File uploaded successfully!",
                         file: `${req.file.filename}`,
@@ -62,8 +60,7 @@ const getFileByName = (req, res) => {
             sendResponse({
                 res,
                 statusCode: 404,
-translateMessage: false,
-                translationKey: "File not found",
+                translationKey: "file_not",
                 error: "File not found",
             });
         } else {
@@ -82,8 +79,7 @@ const getFileDetails = (req, res) => {
             sendResponse({
                 res,
                 statusCode: 404,
-translateMessage: false,
-                translationKey: "File not found",
+                translationKey: "file_not",
                 error: "File not found",
             });
         } else {
@@ -103,7 +99,7 @@ translateMessage: false,
             sendResponse({
                 res,
                 statusCode: 200,
-                translationKey: "File details fetched successfully",
+                translationKey: "file_details",
                 data: fileDetails,
             });
         }
@@ -119,7 +115,7 @@ const getAllFiles = (req, res) => {
             sendResponse({
                 res,
                 statusCode: 500,
-                translationKey: "Unable to scan files",
+                translationKey: "unable_to",
                 error: "Unable to scan files",
             });
         } else {
@@ -142,7 +138,7 @@ const getAllFiles = (req, res) => {
             sendResponse({
                 res,
                 statusCode: 200,
-                translationKey: "All files fetched successfully",
+                translationKey: "all_files",
                 data: { files: fileDetails },
             });
         }

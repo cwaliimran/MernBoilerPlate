@@ -7,7 +7,7 @@ const {
   generateMeta,
 } = require("../helperUtils/responseUtil");
 const validator = require("validator");
-const { sendEmailViaAwsSes } = require("../helperUtils/emailUtil");
+const { sendEmailViaBrevo } = require("../helperUtils/emailUtil");
 const { config } = require("dotenv");
 
 // Create a new contact request
@@ -30,8 +30,7 @@ const createContactRequest = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "Invalid phone number format.",
-      translateMessage: false,
+      translationKey: "invalid_phone",
     });
   }
 
@@ -55,143 +54,41 @@ const createContactRequest = async (req, res) => {
 
     await Promise.all([
       contactRequest.save(),
-      // sendEmailViaAwsSes([supportEmail], subject, mDescription, {
-      // isHtml: false,
-      // }),
+       sendEmailViaBrevo([supportEmail], subject, mDescription, {
+      isHtml: false,
+      }),
     ]);
 
     return sendResponse({
       res,
       statusCode: 201,
-      translationKey: "Contact request created successfully",
+      translationKey: "contact_request",
     });
   } catch (error) {
+
+    if (error.name === "ValidationError") {
+      const errorMessages = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      // Use the first error message key for translation
+      return sendResponse({
+        res,
+        statusCode: 400,
+        translationKey: errorMessages[0], // Directly use the error key in the translationKey
+        error: error,
+      });
+    }
+
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "Internal server error",
+      translationKey: "internal_server",
       error: error,
     });
   }
 };
 
-// Get all contact requests (Admin)
-const getContactRequests = async (req, res) => {
-  try {
-    const { page, limit } = parsePaginationParams(req);
-    const [contactRequests, totalRecords] = await Promise.all([
-      ContactUs.find()
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit),
-      ContactUs.countDocuments(),
-    ]);
-    // Calculate pagination meta
-    const totalPages = totalRecords === 0 ? 1 : Math.ceil(totalRecords / limit);
-    const meta = generateMeta(page, limit, totalRecords, totalPages);
-
-    return sendResponse({
-      res,
-      statusCode: 200,
-      translationKey: "Contact requests fetched successfully",
-      data: contactRequests,
-      meta,
-    });
-  } catch (error) {
-    return sendResponse({
-      res,
-      statusCode: 500,
-      translationKey: "Internal server error",
-      error: error.message,
-    });
-  }
-};
-
-// Update contact request status (Admin)
-const updateContactRequestStatus = async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  const validationOptions = {
-    pathParams: ["id"],
-    rawData: ["status"],
-  };
-
-  if (!validateParams(req, res, validationOptions)) {
-    return; // Invalid request data response already sent by validateParams
-  }
-
-  try {
-    const contactRequest = await ContactUs.findById(id);
-    if (!contactRequest) {
-      return sendResponse({
-        res,
-        statusCode: 404,
-        translateMessage: false,
-        translationKey: "Contact request not found",
-      });
-    }
-
-    contactRequest.status = status;
-    await contactRequest.save();
-    return sendResponse({
-      res,
-      statusCode: 200,
-      translationKey: "Contact request updated successfully",
-      data: contactRequest,
-    });
-  } catch (error) {
-    return sendResponse({
-      res,
-      statusCode: 500,
-      translationKey: "Internal server error",
-      error: error.message,
-    });
-  }
-};
-
-// Delete contact request (Admin)
-const deleteContactRequest = async (req, res) => {
-  const { id } = req.params;
-
-  const validationOptions = {
-    pathParams: ["id"],
-  };
-
-  if (!validateParams(req, res, validationOptions)) {
-    return; // Invalid request data response already sent by validateParams
-  }
-
-  try {
-    const contactRequest = await ContactUs.findById(id);
-    if (!contactRequest) {
-      return sendResponse({
-        res,
-        statusCode: 404,
-        translateMessage: false,
-        translationKey: "Contact request not found",
-      });
-    }
-
-    await contactRequest.deleteOne();
-    return sendResponse({
-      res,
-      statusCode: 200,
-      translationKey: "Contact request deleted successfully",
-    });
-  } catch (error) {
-    return sendResponse({
-      res,
-      statusCode: 500,
-      translationKey: "Internal server error",
-      error: error.message,
-    });
-  }
-};
 
 module.exports = {
   createContactRequest,
-  getContactRequests,
-  updateContactRequestStatus,
-  deleteContactRequest,
 };

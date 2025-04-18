@@ -2,8 +2,8 @@
 const { sendResponse } = require("../helperUtils/responseUtil");
 
 const admin = (req, res, next) => {
-  console.log(req.user.accountState.userType)
-  if (req.user.accountState.userType === "admin") {
+  console.log(req.user.userType)
+  if (req.user.userType === "admin") {
     next();
   } else {
     sendResponse({

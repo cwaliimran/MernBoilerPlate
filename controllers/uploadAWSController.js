@@ -4,98 +4,64 @@ const { Upload } = require("@aws-sdk/lib-storage");
 const multer = require("multer");
 const { sendResponse } = require("../helperUtils/responseUtil");
 const { v4: uuidv4 } = require("uuid");
-const uploadsAWSMw = require("../middlewares/uploadFilesAWSMw");
+const { values } = require("lodash");
 require("dotenv").config();
+const { uploads3Mw } = require("../middlewares/uploadFilesAWSMw");
+const sharp = require("sharp");
+const { send } = require("process");
+let pLimit;
+(async () => {
+  pLimit = (await import("p-limit")).default;
+})();
 
-// Initialize AWS S3 Client
-const s3 = new S3Client({
-  region: process.env.AWS_S3_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
-  },
-});
 
-// Helper function to generate the S3 upload parameters for each file
-const createUploadParams = (file) => {
-  const fileExtension = path.extname(file.originalname); // Get the file extension (e.g., .png)
-  const filename = `${uuidv4()}${fileExtension}`; // Generate unique filename with uuid
-
-  if (!file.buffer) {
-    throw new Error("File buffer is missing");
-  }
-
-  return {
-    Bucket: process.env.S3_BUCKET_NAME,
-    Key: filename,
-    Body: file.buffer, // File buffer from multer
-    ContentType: file.mimetype,
-  };
-};
-
-// Function to upload multiple files to S3 in parallel with progress tracking
-const uploadFilesToS3 = async (files) => {
-  const uploadPromises = files.map((file) => {
-    const params = createUploadParams(file);
-    const parallelUploads3 = new Upload({
-      client: s3,
-      params: params,
-    });
-
-    // Register a progress listener
-    parallelUploads3.on("httpUploadProgress", (progress) => {
-      console.log(
-        `Progress for ${params.Key}: ${Math.round(
-          (progress.loaded / progress.total) * 100
-        )}%`
-      );
-    });
-
-    return parallelUploads3.done().then(() => ({
-      file: params.Key,
-      fileUrl: `${process.env.S3_BASE_URL}/${params.Key}`,
-      fileExtension: path.extname(params.Key),
-    }));
-  });
-
-  return Promise.all(uploadPromises);
-};
+const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3 MB in bytes
 
 // Function to handle file upload
 const uploadFiles = (req, res) => {
-  uploadsAWSMw(req, res, async (err) => {
+  uploads3Mw(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === "LIMIT_FILE_COUNT") {
         // Custom error message when file count exceeds the limit
         return sendResponse({
           res,
           statusCode: 400,
-          translationKey: "You can upload a maximum of 10 files at a time.",
+          translationKey: "limit_exceeding_max_files",
           error: "Too many files",
-          translateMessage: false,
+        });
+      }
+      if (err.code === "LIMIT_UNEXPECTED_FILE") {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "limit_exceeding_max_files",
+          error: err.message,
         });
       }
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "File upload failed " + err.message,
-        error: err.message,
-        translateMessage: false,
+        translationKey: "file_upload",
+        values: {
+          errorMessage: err.message,
+        },
+        error: err,
       });
     } else if (err) {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "File upload failed " + err.message,
-        error: err.message,
-        translateMessage: false,
+        translationKey: "file_upload",
+        values: {
+          errorMessage: err.message,
+        },
+        error: err,
       });
     } else if (!req.files || req.files.length === 0) {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "No files selected!",
-        translateMessage : false,
+        translationKey: "no_files",
       });
     }
 
@@ -110,19 +76,135 @@ const uploadFiles = (req, res) => {
       return sendResponse({
         res,
         statusCode: 200,
-        translationKey: "Files uploaded successfully",
+        translationKey: "files_uploaded",
         data: response,
       });
     } catch (error) {
       return sendResponse({
         res,
         statusCode: 500,
-        translationKey: "S3 upload failed " + error.message,
-        error: error.message,
-        translateMessage: false,
+        translationKey: "s3_upload",
+        values: {
+          error: error.message,
+        },
+        error: error,
       });
     }
   });
+};
+
+// Initialize AWS S3 Client
+const s3 = new S3Client({
+  region: process.env.AWS_S3_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
+  },
+});
+
+// Function to upload multiple files to S3 in parallel with progress tracking
+const uploadFilesToS3 = async (files) => {
+  // Limit the number of concurrent uploads to 5 (you can adjust the limit as needed)
+  const limit = pLimit(5);
+
+  // Create a list of upload promises with concurrency control
+  const uploadPromises = files.map((file, index) => 
+    limit(async () => {
+      // console.log(`Starting upload for file ${index + 1}: ${file.originalname}`);
+
+      // Compress the file buffer only if the size is greater than MAX_FILE_SIZE
+      let fileBuffer = file.buffer;
+      // if (fileBuffer.length > MAX_FILE_SIZE) {
+      //   fileBuffer = await compressImage(file.buffer);
+      // }
+
+      // Create upload parameters
+      const params = createUploadParams({ ...file, buffer: fileBuffer });
+      const parallelUploads3 = new Upload({
+        client: s3,
+        params: params,
+      });
+
+      // Register a progress listener
+      parallelUploads3.on("httpUploadProgress", (progress) => {
+        // console.log(
+        //   `Progress for ${params.Key}: ${Math.round(
+        //     (progress.loaded / progress.total) * 100
+        //   )}%`
+        // );
+      });
+
+      await parallelUploads3.done(); // Perform the upload
+
+      // console.log(`Completed upload for file ${index + 1}: ${file.originalname}`);
+      //also log remaining files
+      console.log(`Remaining files: ${files.length - (index + 1)}`);
+
+      return {
+        file: params.Key,
+        fileUrl: `${process.env.S3_BASE_URL}/${params.Key}`,
+        fileExtension: path.extname(params.Key),
+        // fileSize: (compressedBuffer.length / 1024).toFixed(2) + ' KB', // Uncomment if needed
+      };
+    })
+  );
+
+  // Wait for all the uploads to complete
+  return Promise.all(uploadPromises);
+};
+
+// Helper function to generate the S3 upload parameters for each file
+const createUploadParams = (file) => {
+  const fileExtension = path.extname(file.originalname); // Get the file extension (e.g., .png)
+  const filename = `${uuidv4()}${fileExtension}`; // Generate unique filename with uuid
+
+  if (!file.buffer) {
+    return sendResponse({
+      res,
+      statusCode: 400,
+      translationKey: "file_buffer",
+      error: "File buffer is missing",
+    });
+  }
+
+  return {
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: filename,
+    Body: file.buffer, // File buffer from multer
+    ContentType: file.mimetype,
+    ACL: "public-read-write",
+  };
+};
+
+// Compress image until the desired size is achieved
+const compressImage = async (buffer) => {
+  let quality = 80; // Start with high quality
+  let compressedBuffer = buffer;
+
+  do {
+    compressedBuffer = await sharp(buffer)
+      .jpeg({ quality }) // Adjust quality
+      .toBuffer();
+
+    // Reduce quality further if the size is still above the limit
+    if (compressedBuffer.length <= MAX_FILE_SIZE) {
+      break;
+    }
+    console.log(`Compressed image size: ${compressedBuffer.length} bytes`);
+
+    quality -= 10;
+
+    if (quality < 10) {
+      return sendResponse({
+        res,
+        statusCode: 400,
+        translationKey: "image_size_compress",
+        error: "Unable to compress image below 3 MB",
+      });
+    }
+  } while (compressedBuffer.length > MAX_FILE_SIZE);
+
+  return compressedBuffer;
 };
 
 // Function to delete file from S3
@@ -161,9 +243,8 @@ const deleteFiles = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "File key is required to delete the file.",
+      translationKey: "file_key",
       error: "File key is missing.",
-      translateMessage : false,
     });
   }
 
@@ -174,7 +255,7 @@ const deleteFiles = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 200,
-        translationKey: "Files deleted successfully.",
+        translationKey: "files_deleted",
         data: { fileKeys: fileKey },
       });
     } else {
@@ -183,7 +264,7 @@ const deleteFiles = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 200,
-        translationKey: "File deleted successfully.",
+        translationKey: "file_deleted",
         data: { fileKey },
       });
     }
@@ -191,8 +272,8 @@ const deleteFiles = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "File deletion failed.",
-      error: error.message,
+      translationKey: "file_deletion",
+      error: error,
     });
   }
 };

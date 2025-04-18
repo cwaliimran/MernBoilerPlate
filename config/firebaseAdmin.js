@@ -3,7 +3,7 @@ const serviceAccount = require("../secretAssets/serviceAccountKey.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://mernboilerplate-7c1c9.firebaseio.com",
+  databaseURL: "https://borrow-app-b39b2.firebaseio.com",
 });
 
 module.exports = admin;

@@ -10,13 +10,13 @@ const supportRequestSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: [true, 'email_required'], // Generic error message key
     trim: true,
     validate: {
       validator: function (value) {
         return validator.isEmail(value);
       },
-      message: 'Invalid email format.',
+      message: 'email_invalid',
     },
   },
   subject: {

@@ -1,11 +1,39 @@
 const { User, SubscriptionType } = require("../models/userModel");
 const moment = require("moment");
-const { sendResponse, validateParams } = require("../helperUtils/responseUtil");
+const {
+  sendResponse,
+  validateParams,
+  parsePaginationParams,
+  generateMeta,
+} = require("../helperUtils/responseUtil");
 const { formatUserResponse } = require("../helperUtils/userResponseUtil");
 const { NotificationTypes } = require("../models/Notifications");
-const { sendUserNotifications } = require("./communicationController");
 const validator = require("validator");
-//get all users
+const Review = require("../models/Review");
+const Booking = require("../models/Booking");
+const { userCache } = require("../config/nodeCache");
+const fs = require("fs");
+const path = require("path");
+// Path to the JSON file
+const currenciesFilePath = path.join(
+  __dirname,
+  "../assets/currenciesList.json"
+);
+
+// Function to read the JSON file and parse it
+const readJSONFile = (filePath) => {
+  try {
+    const data = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    console.error(`Error reading file from disk: ${error}`);
+    return null;
+  }
+};
+
+// Read the currencies data at startup
+const currenciesData = readJSONFile(currenciesFilePath);
+
 //get all users
 
 const allUsers = async (req, res) => {
@@ -15,14 +43,14 @@ const allUsers = async (req, res) => {
     sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Suggested friends fetched successfully",
+      translationKey: "suggested_friends",
       data,
     });
   } catch (error) {
     sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while fetching suggested friends",
+      translationKey: "an_error_6",
       error,
     });
   }
@@ -57,14 +85,14 @@ const getNearbyUsers = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Nearby users fetched successfully",
+      translationKey: "nearby_users",
       data: usersNearby,
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while fetching nearby users",
+      translationKey: "an_error_7",
       error,
     });
   }
@@ -91,8 +119,7 @@ const documentsIdentity = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "User to verify not found",
+        translationKey: "user_to",
       });
     }
 
@@ -102,8 +129,9 @@ const documentsIdentity = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "Invalid verification type, supported types are " + validTypes.join(", "),
-        translateMessage: false,
+        translationKey:
+          "Invalid verification type, supported types are " +
+          validTypes.join(", "),
       });
     }
 
@@ -114,13 +142,13 @@ const documentsIdentity = async (req, res) => {
       res,
       statusCode: 200,
       data: response,
-      translationKey: "User identity updated successfully",
+      translationKey: "user_identity",
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while verifying the user",
+      translationKey: "an_error_8",
       error,
     });
   }
@@ -143,8 +171,7 @@ const blockUser = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "You cannot block yourself",
-      translateMessage: false,
+      translationKey: "you_cannot",
     });
   }
   try {
@@ -157,8 +184,7 @@ const blockUser = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "User to block not found",
+        translationKey: "user_to_1",
       });
     }
 
@@ -167,8 +193,7 @@ const blockUser = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "User is already blocked",
-        translateMessage: false,
+        translationKey: "user_is",
       });
     }
 
@@ -181,13 +206,13 @@ const blockUser = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "User blocked successfully",
+      translationKey: "user_blocked",
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while blocking the user",
+      translationKey: "an_error_9",
       error,
     });
   }
@@ -210,8 +235,7 @@ const reportUser = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "You cannot report yourself",
-      translateMessage: false,
+      translationKey: "you_cannot_1",
     });
   }
   try {
@@ -221,8 +245,7 @@ const reportUser = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "User to report not found",
+        translationKey: "user_to_2",
       });
     }
 
@@ -231,8 +254,7 @@ const reportUser = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "You have already reported this user",
-        translateMessage: false,
+        translationKey: "you_have",
       });
     }
 
@@ -256,13 +278,13 @@ const reportUser = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "User reported successfully",
+      translationKey: "user_reported",
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while reporting the user",
+      translationKey: "an_error_10",
       error,
     });
   }
@@ -284,7 +306,6 @@ const addOrUpdateSubscription = async (req, res) => {
       res,
       statusCode: 400,
       translationKey: errorMessage,
-      translateMessage: false,
     });
   }
 
@@ -328,7 +349,7 @@ const addOrUpdateSubscription = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Subscription added or updated successfully",
+      translationKey: "subscription_added",
       data: user.subscriptions,
     });
   } catch (error) {
@@ -357,8 +378,7 @@ const removeSubscription = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "Subscription not found",
+        translationKey: "subscription_not",
       });
     }
 
@@ -370,13 +390,13 @@ const removeSubscription = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Subscription removed successfully",
+      translationKey: "subscription_removed",
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while removing the subscription",
+      translationKey: "an_error_12",
       error,
     });
   }
@@ -429,55 +449,21 @@ const getSubscriptions = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "User subscriptions fetched successfully",
+      translationKey: "user_subscriptions",
       data: formattedSubscriptions,
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while fetching user subscriptions",
+      translationKey: "an_error_13",
       error,
     });
   }
 };
 
 // Create a mapping for all possible fields and their respective collections
-const populationFields = {
-  profileIcon: { path: "profileIcon.refId" },
-  age: { path: "personalDetails.age", select: "range" },
-  pregnancyType: { path: "pregnancyDetails.pregnancyType", select: "type" },
-  conceptionMethod: {
-    path: "pregnancyDetails.conceptionMethod",
-    select: "method",
-  },
-  weeksOfPregnancyUntilLossRange: {
-    path: "pregnancyDetails.weeksOfPregnancyUntilLossRange",
-    select: "range",
-  },
-  pregnancyLossType: {
-    path: "lossDetails.pregnancyLoss.pregnancyLossType",
-    select: "type",
-  },
-  yearOfLossRange: { path: "lossDetails.yearOfLossRange", select: "range" },
-  numberOfPregnancyLosses: {
-    path: "lossDetails.numberOfPregnancyLosses",
-    select: "range",
-  },
-  healingPhase: { path: "healingPhaseDetails.healingPhase", select: "phase" },
-  emotionalStatus: {
-    path: "healingPhaseDetails.emotionalStatus",
-    select: "status",
-  },
-  pregnancyPlanningStatus: {
-    path: "healingPhaseDetails.pregnancyPlanningStatus",
-    select: "status",
-  },
-  additionalSupportNeeds: {
-    path: "healingPhaseDetails.additionalSupportNeeds",
-    select: "need",
-  },
-};
+const populationFields = {};
 
 /**
  * Dynamic population function to fetch user with populated fields.
@@ -538,19 +524,17 @@ const getUserProfile = async (req, res, next, fieldsToPopulate = []) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "User not found",
+        translationKey: "user_not",
       });
     }
-  
-     // Ensure toJSON method is applied to strip out sensitive data
-     const userObject = user.toJSON();
-     console.log("object",userObject);
+
+    // Ensure toJSON method is applied to strip out sensitive data
+    const userObject = user.toJSON();
     const response = formatUserResponse(userObject, null, [], ["resetToken"]);
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "User fetched successfully",
+      translationKey: "user_fetched",
       data: response,
     });
   } catch (error) {
@@ -564,6 +548,70 @@ const getUserProfile = async (req, res, next, fieldsToPopulate = []) => {
   }
 };
 
+const getOtherUserProfile = async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+
+    // Fetch user profile, recent reviews, and bookings concurrently
+    const [user, recentReviews, bookings] = await Promise.all([
+      User.findById(userId).select(
+        "profileIcon name phoneNumber verificationStatus.phoneNumber location distanceUnit documents verificationStatus.documents"
+      ),
+      Review.find({ object: userId, reviewType: "user" })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("subject", "name profileIcon"),
+      Booking.find({
+        $or: [{ rentee: userId }, { renter: userId }],
+        listingBookingStatus: { $in: ["booked", "picked"] },
+      }).select("listingBookingStatus"),
+    ]);
+
+    if (!user) {
+      return sendResponse({
+        res,
+        statusCode: 404,
+        translationKey: "user_not",
+      });
+    }
+
+    // Ensure toJSON method is applied to strip out sensitive data
+    const userObject = user.toJSON();
+    const response = formatUserResponse(
+      userObject,
+      null,
+      [],
+      ["resetToken", "accountState", "metadata", "basicInfo.location"]
+    );
+
+    // Include phone number if there are bookings with status "booked" or "picked"
+    // if (bookings.length > 0) {
+    response.contactInfo = {
+      phoneNumber: user.phoneNumber,
+      verificationStatus: user.verificationStatus.phoneNumber,
+      location: user.location,
+    };
+    // }
+
+    response.recentReviews = recentReviews;
+
+    return sendResponse({
+      res,
+      statusCode: 200,
+      translationKey: "user_fetched",
+      data: response,
+    });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: error.message,
+      error,
+    });
+  }
+};
+
 /**
  * Update user profile function.
  * @param {Object} req - The request object containing user data.
@@ -572,7 +620,15 @@ const getUserProfile = async (req, res, next, fieldsToPopulate = []) => {
  * @returns {Promise<void>}
  */
 const updateUserProfile = async (req, res, next) => {
-  const { name, profileIcon, phoneNumber, location } = req.body;
+  const {
+    name,
+    profileIcon,
+    phoneNumber,
+    location,
+    distanceUnit,
+    currencySymbol,
+    currencyCode,
+  } = req.body;
   const currentUser = req.user;
 
   try {
@@ -582,13 +638,40 @@ const updateUserProfile = async (req, res, next) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "User not found",
+        translationKey: "user_not",
       });
     }
 
     if (profileIcon) {
       user.profileIcon = profileIcon;
+    }
+
+    if (distanceUnit) {
+      user.distanceUnit = distanceUnit;
+    }
+
+    if (currencySymbol && currencyCode) {
+      //verify currency symbol and code matches in the list
+      if (currenciesData === null) {
+        return sendResponse({
+          res,
+          statusCode: 500,
+          translationKey: "currency_list_error",
+        });
+      }
+      const currency = currenciesData.find(
+        (c) => c.symbol === currencySymbol && c.code === currencyCode
+      );
+      if (!currency) {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "invalid_currency",
+        });
+      }
+
+      user.currencySymbol = currencySymbol;
+      user.currencyCode = currencyCode;
     }
 
     // Update fields if provided
@@ -599,8 +682,7 @@ const updateUserProfile = async (req, res, next) => {
         return sendResponse({
           res,
           statusCode: 400,
-          translationKey: "Invalid phone number",
-          translateMessage: false,
+          translationKey: "invalid_phone_1",
         });
       }
       user.phoneNumber = phoneNumber;
@@ -613,8 +695,7 @@ const updateUserProfile = async (req, res, next) => {
         return sendResponse({
           res,
           statusCode: 400,
-          translationKey: "Invalid location data",
-          translateMessage: false,
+          translationKey: "invalid_location_1",
         });
       }
       // Ensure coordinates are numbers
@@ -623,8 +704,7 @@ const updateUserProfile = async (req, res, next) => {
         return sendResponse({
           res,
           statusCode: 400,
-          translationKey: "Invalid coordinates data",
-          translateMessage: false,
+          translationKey: "invalid_coordinates",
         });
       }
       user.location = {
@@ -637,14 +717,15 @@ const updateUserProfile = async (req, res, next) => {
     // Save the updated user
     await user.save();
 
-   // Ensure toJSON method is applied to strip out sensitive data
-   const userObject = user.toJSON();
+    userCache.del(currentUser._id.toString());
+    // Ensure toJSON method is applied to strip out sensitive data
+    const userObject = user.toJSON();
 
     const response = formatUserResponse(userObject, null, [], ["resetToken"]);
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "User profile updated successfully",
+      translationKey: "user_profile",
       data: response,
     });
   } catch (error) {
@@ -652,9 +733,81 @@ const updateUserProfile = async (req, res, next) => {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: `An error occurred while updating the user profile: ${error.message}`,
+      translationKey: "user_profile_update_error", // Use a translation key
+      values: { errorMessage: error.message }, // Pass the error message as a dynamic value
       error,
-      translateMessage: false,
+    });
+  }
+};
+
+const getEarnings = async (req, res) => {
+  const { _id } = req.user;
+  const { month } = req.query;
+
+  // Validate month
+  const validationOptions1 = {
+    dateFields: {
+      month: "MM-YYYY",
+    },
+  };
+  if (!validateParams(req, res, validationOptions1)) {
+    return;
+  }
+
+  // Parse the month and year from the query
+  const [monthPart, yearPart] = month.split("-");
+  const startDate = moment(`${yearPart}-${monthPart}-01`)
+    .startOf("month")
+    .toDate();
+  const endDate = moment(startDate).endOf("month").toDate();
+
+  // Get earnings from bookings where user is renter
+  try {
+    const [rentals, userBookings] = await Promise.all([
+      Booking.find({
+        renter: _id,
+        createdAt: { $gte: startDate, $lte: endDate },
+        paymentStatus: "paid",
+      }).select("totalBill listingDataSnapshot"),
+      Booking.find({
+        rentee: _id,
+        createdAt: { $gte: startDate, $lte: endDate },
+        paymentStatus: "paid",
+      }).select("totalBill listingDataSnapshot"),
+    ]);
+
+    const earnings = rentals.reduce((total, rental) => {
+      return total + rental.totalBill;
+    }, 0);
+    const totalRentals = rentals.length;
+
+    const spending = userBookings.reduce((total, booking) => {
+      return total + booking.totalBill;
+    }, 0);
+
+    const totalBookings = userBookings.length;
+
+    return sendResponse({
+      res,
+      statusCode: 200,
+      translationKey: "Earnings fetched successfully",
+      data: {
+        rentals: {
+          earnings: earnings,
+          totalRentals,
+        },
+        bookings: {
+          spending: spending,
+          totalBookings,
+        },
+      },
+    });
+  } catch (error) {
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: "earnings_fetch_error",
+      error,
     });
   }
 };
@@ -670,4 +823,6 @@ module.exports = {
   getUserProfile,
   updateUserProfile,
   documentsIdentity,
+  getOtherUserProfile,
+  getEarnings,
 };

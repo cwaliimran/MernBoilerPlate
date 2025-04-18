@@ -4,13 +4,13 @@ const DeviceSchema = mongoose.Schema({
   deviceId: {
     type: String,
     default: "",
-    required: [true, "Device id is required"],
+    required: [true, "device_id_required"],
   },
   deviceType: {
     type: String,
     enum: ["android", "ios"],
     default: "android",
-    required: [true, "Device type is required"],
+    required: [true, "device_type_required"],
   },
 });
 

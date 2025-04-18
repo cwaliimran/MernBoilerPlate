@@ -1,29 +1,34 @@
 const multer = require("multer");
-const path = require("path");
 
-// Set storage engine to memory
+
+// Memory storage for multer
 const storage = multer.memoryStorage(); // Store files in memory as a buffer
 
-// Initialize upload with file size limit and file type filter
+// Multer middleware for file upload
 const uploads3Mw = multer({
-  storage: storage, // Use memoryStorage instead of diskStorage
-  limits: { fileSize: 3000000 }, // Limit file size to 3MB
+  storage: storage,
+  // limits: { fileSize: 10 * 1024 * 1024 }, // Initial limit to handle larger uncompressed files
   fileFilter: (req, file, cb) => {
     checkFileType(file, cb);
   },
-}).array("files", 10); // Adjust this based on whether you're uploading single or multiple files
+}).array("files", 20);
 
-// Check file type function
+// Function to check file type
 function checkFileType(file, cb) {
-  const filetypes = /jpeg|jpg|png/; // Allowed file types
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const filetypes = /jpeg|jpg|png|gif|bmp|tiff|webp/;
+  const extname = filetypes.test(
+    file.originalname.toLowerCase()
+  );
   const mimetype = filetypes.test(file.mimetype);
 
-  if (mimetype && extname) {
-    return cb(null, true);
+  if (extname && mimetype) {
+    cb(null, true);
   } else {
-    cb(new Error("Error: Images Only!")); // Reject any non-image files
+    cb(new Error("Invalid file type. Only images are allowed!"));
   }
 }
 
-module.exports = uploads3Mw;
+
+module.exports = {
+  uploads3Mw,
+};

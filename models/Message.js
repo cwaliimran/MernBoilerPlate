@@ -3,15 +3,30 @@ const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema(
   {
-    senderId: {
+    type: {
+      type: String,
+      enum: ["direct", "group"],
+      required: true,
+      default: "direct",
+    },
+    subjectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    receiverId: {
+    objectId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
       required: true,
+      validate: {
+        validator: function () {
+          return (
+            (this.type === "direct" && this.objectId instanceof mongoose.Types.ObjectId) ||
+            (this.type === "group" && this.objectId instanceof mongoose.Types.ObjectId)
+          );
+        },
+        message: "Invalid objectId for the selected message type",
+      },
+      refPath: "type", // Dynamic reference: "User" for direct, "Group" for group messages
     },
     messageType: {
       type: String,
@@ -31,11 +46,7 @@ const messageSchema = new mongoose.Schema(
       },
       validate: {
         validator: function (value) {
-          // If messageType is text, mediaUrl must be null
-          if (this.messageType === "text") {
-            return value === null;
-          }
-          return true;
+          return this.messageType !== "text" || value === null;
         },
         message: "Media URL must be null for text messages.",
       },
@@ -50,13 +61,12 @@ const messageSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
-    ], // Track which users have read this message
+    ], // Tracks which users have read the message
   },
   {
     timestamps: true,
   }
 );
 
-const Message = mongoose.model("Message", messageSchema);
-
-module.exports = Message;
+// Export the model
+module.exports = mongoose.model("Message", messageSchema);

@@ -1,5 +1,6 @@
 // helperUtils/userResponseUtil.js
 
+const { lang } = require("moment-timezone");
 const { convertUtcToTimezone } = require("./responseUtil");
 
 const formatUserResponse = (
@@ -23,6 +24,10 @@ const formatUserResponse = (
       phoneNumber: userObject.phoneNumber,
       phoneNote: userObject.phoneNote,
       location: userObject.location,
+      distanceUnit: userObject.distanceUnit || "km",
+      currencyCode: userObject.currencyCode || "USD",
+      currencyCode: userObject.currencyCode || "USD",
+      language: userObject.language,
     },
     accountState: {
       userType: userObject.accountState?.userType || "user",

@@ -10,8 +10,7 @@ const bulkInsertHandler = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "Values array is required and must not be empty",
-      translateMessage: false,
+      translationKey: "values_array",
     });
   }
 
@@ -19,8 +18,7 @@ const bulkInsertHandler = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "Collection name is required",
-      translateMessage: false,
+      translationKey: "collection_name",
     });
   }
 
@@ -37,7 +35,7 @@ const bulkInsertHandler = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "Error during bulk insertion",
+      translationKey: "error_during",
       error,
     });
   }
@@ -51,8 +49,7 @@ const deleteCollectionHandler = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "Collection name is required",
-      translateMessage: false,
+      translationKey: "collection_name",
     });
   }
 
@@ -69,7 +66,7 @@ const deleteCollectionHandler = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "Error during collection deletion",
+      translationKey: "error_during_1",
       error,
     });
   }

@@ -3,6 +3,7 @@ const {
   sendEmailViaSgrid,
   sendEmailViaAwsSes,
   sendSmsViaPinpoint,
+  sendEmailViaBrevo
 } = require("../helperUtils/emailUtil");
 const { Devices } = require("../models/Devices");
 const { sendResponse, validateParams } = require("../helperUtils/responseUtil");
@@ -11,6 +12,7 @@ const {
   registrationOtpEmailTemplate,
 } = require("../helperUtils/emailTemplates");
 const { NotificationExp } = require("../models/Notifications");
+const { Vonage } = require("@vonage/server-sdk");
 
 /**
  * Send an email using SendGrid
@@ -34,7 +36,7 @@ const sendEmailSgrid = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Email sent successfully",
+      translationKey: "email_sent",
     });
   } catch (error) {
     return sendResponse({
@@ -64,19 +66,50 @@ const sendEmailAws = async (req, res) => {
   }
 
   try {
-   
     await sendEmailViaAwsSes(emails, subject, body, config);
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Email sent successfully",
+      translationKey: "email_sent",
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "Failed to send email",
-      error: error.message,
+      translationKey: "failed_to",
+      error: error,
+    });
+  }
+};
+/**
+ * Send an email using AWS SES
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const sendEmailBrevo = async (req, res) => {
+  const { title, emails, subject, body, config } = req.body;
+  // Validate required parameters
+  const validationOptions = {
+    bodyParams: ["title", "emails", "subject", "body"],
+  };
+
+  if (!validateParams(req, res, validationOptions)) {
+    return;
+  }
+
+  try {
+    await sendEmailViaBrevo(emails, subject, body, config);
+    return sendResponse({
+      res,
+      statusCode: 200,
+      translationKey: "email_sent",
+    });
+  } catch (error) {
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: "failed_to",
+      error: error,
     });
   }
 };
@@ -89,20 +122,18 @@ const sendSmsViaPinpointAws = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: "Phone number and OTP are required.",
+      translationKey: "phone_number_1",
       error: "Phone number and OTP are required.",
-      translateMessage: false,
-      translateMessage: false,
     });
   }
 
   try {
-    const otpMessage = `${otp} is your OTP for the ID Social App`;
+    const otpMessage = `${otp} is your OTP for the Borrow App`;
     await sendSmsViaPinpoint(phoneNumber, otpMessage);
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "OTP sent successfully.",
+      translationKey: "otp_sent",
     });
   } catch (error) {
     return sendResponse({
@@ -110,7 +141,6 @@ const sendSmsViaPinpointAws = async (req, res) => {
       statusCode: 500,
       translationKey: error.body,
       error,
-      translateMessage: false,
     });
   }
 };
@@ -163,7 +193,8 @@ const sendNotificationControllerForTesting = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 200,
-        translationKey: `${title} notification(s) sent successfully`,
+        translationKey: "notifications_sent_success", // Use the success translation key
+        values: { title }, // Pass the dynamic title
         data: {
           successIds,
           failureIds,
@@ -173,7 +204,8 @@ const sendNotificationControllerForTesting = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 500,
-        translationKey: `${title} notification(s) failed to send`,
+        translationKey: "notifications_sent_failure", // Use the success translation key
+        values: { title }, // Pass the dynamic title
         data: {
           successIds,
           failureIds,
@@ -258,6 +290,12 @@ const sendUserNotifications = async ({
           responses.push({ userId, sendNotificationResponse });
         }
 
+        console.log(data)
+
+        responses.forEach((response) => {
+          console.log(`Response for user ${response.userId}:`, JSON.stringify(response.sendNotificationResponse, null, 2));
+        });
+
         // Process the notifications after sending them
         if (!saveNotification) {
           return;
@@ -268,9 +306,10 @@ const sendUserNotifications = async ({
           type: data.type || "system", // Assign a default type if not provided
           subjectId: sender,
           objectId: objectId,
+          objectType: data.objectType,
+          receiverId: userId,
           title,
           body,
-          data, // Add the custom data payload
         }));
 
         // Save all notifications in a batch to the database
@@ -381,10 +420,162 @@ const sendNotification = async (recipients, payload) => {
   }
 };
 
+// Initialize the Vonage client with your credentials
+const vonage = new Vonage({
+  apiKey: "ec823766", // Replace with your Vonage API Key
+  apiSecret: "KNMQzSzi9eJx93mF", // Replace with your Vonage API Secret
+});
+
+const sendSmsViaVonage = async (req, res) => {
+  const { phoneNumber, otp } = req.body;
+
+  // Validate required parameters
+  if (!phoneNumber || !otp) {
+    return sendResponse({
+      res,
+      statusCode: 400,
+      translationKey: "phone_number_1",
+      error: "Phone number and OTP are required.",
+    });
+  }
+
+  try {
+    const otpMessage = `${otp} is your OTP for the ZahraPay App`;
+    const from = "+923005098444"; // Replace with your Vonage virtual number
+
+    // Send SMS using Nexmo's API (Vonage)
+    const messageData = {
+      to: phoneNumber,
+      from: from,
+      text: otpMessage,
+    };
+
+    // Send the message via Nexmo (Vonage) SDK
+    vonage.sms.send(messageData, (err, responseData) => {
+      console.log("Entered the callback function");
+      if (err) {
+        console.error("Error sending SMS:", err);
+        return sendResponse({
+          res,
+          statusCode: 500,
+          translationKey: "Error sending SMS via Vonage",
+          error: err.message,
+        });
+      } else {
+        console.log("Response data:", responseData);
+        if (
+          responseData &&
+          responseData.messages &&
+          responseData.messages[0].status === "0"
+        ) {
+          console.log("Message sent successfully:", responseData);
+          return sendResponse({
+            res,
+            statusCode: 200,
+            translationKey: "otp_sent",
+            data: responseData,
+          });
+        } else {
+          console.error(
+            "Failed to send message. Status:",
+            responseData.messages[0].status
+          );
+          return sendResponse({
+            res,
+            statusCode: 500,
+            translationKey: "otp_sent",
+            error: `Failed with status: ${responseData.messages[0].status}`,
+          });
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: error.message || "otp_sent",
+      error: error.message,
+    });
+  }
+};
+
+
+const axios = require('axios');
+
+const sendSMSSomalianAPI = async (req, res) => {
+  const { phoneNumber, otp } = req.body;
+  const message = `Your OTP is ${otp}`;
+
+  // Validate required parameters
+  if (!phoneNumber || !otp) {
+    return sendResponse({
+      res,
+      statusCode: 400,
+      translationKey: "phone_number_1",
+      error: "Phone number and message are required.",
+    });
+  }
+
+  try {
+    const apiKey = '07098f01-6071-4045-abd8-63a7ec3e25ac'; // Replace with your actual API Key
+    const apiSecret = '5810f9db-bd8e-4002-ab57-721ab0d8ee1e'; // Replace with your actual API Secret
+
+    // Combine API credentials
+    const accountApiCredentials = `${apiKey}:${apiSecret}`;
+
+    // Convert credentials to base64
+    const buff = Buffer.from(accountApiCredentials);
+    const base64Credentials = buff.toString('base64');
+
+    // Set the request headers, including the Authorization header
+    const requestHeaders = {
+      headers: {
+        'Authorization': `Basic ${base64Credentials}`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    // Construct the request data (the SMS content and destination number)
+    const requestData = JSON.stringify({
+      messages: [{
+        content: message, // Message content
+        destination: phoneNumber // Destination phone number
+      }]
+    });
+
+    // Send the POST request to the API endpoint
+    const response = await axios.post('https://rest.mymobileapi.com/bulkmessages', requestData, requestHeaders);
+
+    if (response.data) {
+      console.log("Success:", response.data);
+      return sendResponse({
+        res,
+        statusCode: 200,
+        translationKey: "otp_sent",
+        data: response.data,
+      });
+    }
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: error.message || "otp_sent",
+      error: error.message,
+    });
+  }
+};
+
+
+
 module.exports = {
   sendEmailSgrid,
   sendEmailAws,
   sendSmsViaPinpointAws,
   sendNotificationControllerForTesting,
   sendUserNotifications,
+  sendSmsViaVonage,
+  sendSMSSomalianAPI,
+  sendEmailBrevo
 };

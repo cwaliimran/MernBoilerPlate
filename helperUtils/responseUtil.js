@@ -19,18 +19,47 @@ const sendResponse = ({
   meta = null,
   error = null,
   translateMessage = true,
+  values = {}, // Add values parameter for dynamic translation
 }) => {
   // Log the error regardless of the translation flag
 
   // Prepare the response object
   const response = {};
   if (translateMessage) {
-    //its translation key to get from locale file
-    response.message = res?.req?.__(translationKey) || translationKey;
+    // Get the translation key from the locale file and replace the placeholders using the provided values
+    let message = res?.req?.__(translationKey);
+
+    // If the message is missing, undefined, or equals the raw translationKey, fall back to translationKey
+    if (!message || message.trim() === "" || message === translationKey) {
+      message = translationKey;
+    }
+
+    // If values are provided, replace placeholders in the translation
+    if (values && typeof values === "object") {
+      Object.keys(values).forEach((key) => {
+        const placeholder = `{${key}}`;
+        message = message.replace(placeholder, values[key]);
+      });
+    }
+    response.message = message;
   } else {
     response.message = translationKey;
   }
-  if (response.message.trim() === "") {
+
+  // Check if response.message is an empty object, and set a default message if so
+  if (
+    typeof response.message === "object" &&
+    response.message !== null &&
+    Object.keys(response.message).length === 0
+  ) {
+    response.message = "Something went wrong"; // Default message for empty objects
+  }
+
+  // Ensure response.message is a string before using trim()
+  if (typeof response.message === "string" && response.message.trim() === "") {
+    response.message = translationKey; // Fallback to translation key if the message is empty
+  } else if (!response.message) {
+    // If response.message is undefined or null, set it to the translation key
     response.message = translationKey;
   }
   // Include data in the response if provided
@@ -97,17 +126,14 @@ const generateMeta = (page, limit, total) => {
   return {
     currentPage: page,
     totalPages: Math.ceil(total / limit),
+    totalRecords: total,
     limit: limit,
   };
 };
 
 // Helper function to validate an array of MongoDB ObjectIds with detailed error messages
-const validateObjectIdsArr = (
-  res,
-  ids,
-  fieldNames,
-  errorMessage = "Invalid request data"
-) => {
+// Helper function to validate an array of MongoDB ObjectIds with detailed error messages
+const validateObjectIdsArr = (res, ids, fieldNames) => {
   const invalidParams = [];
   for (let i = 0; i < ids.length; i++) {
     const id = ids[i];
@@ -121,15 +147,11 @@ const validateObjectIdsArr = (
 
   // If invalid ObjectIds are found
   if (invalidParams.length > 0) {
-    const translationKey = `${errorMessage}: Invalid ObjectIds for fields: '${invalidParams.join(
-      ", "
-    )}'`;
-    console.log(translationKey);
     sendResponse({
       res,
       statusCode: 400,
-      translationKey: translationKey,
-      translateMessage: false,
+      translationKey: "invalid_object_ids", // Translation key
+      values: { fields: invalidParams.join(", ") }, // Pass invalid field names as values
     });
     return false;
   }
@@ -151,6 +173,7 @@ const convertUnderscoresToSpaces = (str) => String(str).replace(/_/g, " ");
 // }
 
 // Generic validation function
+// Generic validation function
 const validateParams = (req, res, options = {}) => {
   const {
     queryParams = [],
@@ -159,8 +182,9 @@ const validateParams = (req, res, options = {}) => {
     rawData = [],
     objectIdFields = [],
     dateFields = {},
-    enumFields = {}, //field for enum validations
-    minLengthFields = {}, // field for minimum length validations
+    timeFields = {},
+    enumFields = {}, // Field for enum validations
+    minLengthFields = {}, // Field for minimum length validations
   } = options;
 
   // Validate query parameters
@@ -179,13 +203,8 @@ const validateParams = (req, res, options = {}) => {
     sendResponse({
       res,
       statusCode: 400,
-      translationKey: `Missing query parameters: '${missingParamsQuery.join(
-        ", "
-      )}'`,
-      data: null,
-      meta: null,
-      error: null,
-      translateMessage: false,
+      translationKey: "missing_query_parameters", // Use a general key from translations
+      values: { fields: missingParamsQuery.join(", ") }, // Pass the actual missing field as a value
     });
     return false;
   }
@@ -206,13 +225,8 @@ const validateParams = (req, res, options = {}) => {
     sendResponse({
       res,
       statusCode: 400,
-      translationKey: `Missing path parameters: '${missingParamsPath.join(
-        ", "
-      )}'`,
-      data: null,
-      meta: null,
-      error: null,
-      translateMessage: false,
+      translationKey: "missing_path_parameters", // Use a general key from translations
+      values: { fields: missingParamsPath.join(", ") }, // Pass the actual missing field as a value
     });
     return false;
   }
@@ -231,11 +245,8 @@ const validateParams = (req, res, options = {}) => {
     sendResponse({
       res,
       statusCode: 400,
-      translationKey: `Missing form fields: '${missingParamsForm.join(", ")}'`,
-      data: null,
-      meta: null,
-      error: null,
-      translateMessage: false,
+      translationKey: "missing_form_fields", // Use a general key from translations
+      values: { fields: missingParamsForm.join(", ") }, // Pass the actual missing field as a value
     });
     return false;
   }
@@ -243,7 +254,8 @@ const validateParams = (req, res, options = {}) => {
   // Validate raw data
   const missingParamsRaw = [];
   for (const param of rawData) {
-    if (req.body[param]) {
+    if (req.body.hasOwnProperty(param)) {
+      console.log(`param: ${param}, value: ${req.body[param]}`);
       req.body[camelCase(param)] = convertUnderscoresToSpaces(req.body[param]);
     } else {
       missingParamsRaw.push(param);
@@ -254,13 +266,8 @@ const validateParams = (req, res, options = {}) => {
     sendResponse({
       res,
       statusCode: 400,
-      translationKey: `Missing raw data fields: '${missingParamsRaw.join(
-        ", "
-      )}'`,
-      data: null,
-      meta: null,
-      error: null,
-      translateMessage: false,
+      translationKey: "missing_raw_fields", // Use a general key from translations
+      values: { fields: missingParamsRaw.join(", ") }, // Pass the actual missing field as a value
     });
     return false;
   }
@@ -282,18 +289,15 @@ const validateParams = (req, res, options = {}) => {
 
   // Validate date fields
   for (const [field, format] of Object.entries(dateFields)) {
-    const dateValue = req.body[field];
+    const dateValue = req.body[field] || req.params[field] || req.query[field];
     if (dateValue) {
       const isValidDate = moment(dateValue, format, true).isValid();
       if (!isValidDate) {
         sendResponse({
           res,
           statusCode: 400,
-          translationKey: `Invalid date format for '${field}'. Expected format is ${format}.`,
-          data: null,
-          meta: null,
-          error: null,
-          translateMessage: false,
+          translationKey: "invalid_date_format", // Use translation key
+          values: { field, format }, // Replace placeholders with actual values
         });
         return false;
       }
@@ -301,11 +305,32 @@ const validateParams = (req, res, options = {}) => {
       sendResponse({
         res,
         statusCode: 400,
-        translationKey: `Missing date field: '${field}'`,
-        data: null,
-        meta: null,
-        error: null,
-        translateMessage: false,
+        translationKey: "missing_date_field", // Use translation key
+        values: { field }, // Pass the missing field as a value
+      });
+      return false;
+    }
+  }
+  //time fields validation
+  for (const [field, format] of Object.entries(timeFields)) {
+    const timeValue = req.body[field];
+    if (timeValue) {
+      const isValidTime = moment(timeValue, format, true).isValid();
+      if (!isValidTime) {
+        sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "invalid_time_format", // Use translation key
+          values: { field, format }, // Replace placeholders with actual values
+        });
+        return false;
+      }
+    } else {
+      sendResponse({
+        res,
+        statusCode: 400,
+        translationKey: "missing_time_field", // Use translation key
+        values: { field }, // Pass the missing field as a value
       });
       return false;
     }
@@ -318,11 +343,8 @@ const validateParams = (req, res, options = {}) => {
       sendResponse({
         res,
         statusCode: 400,
-        translationKey: `Invalid value for '${field}'. Allowed values are: ${allowedValues.join(", ")}.`,
-        data: null,
-        meta: null,
-        error: null,
-        translateMessage: false,
+        translationKey: "invalid_enum_value", // Use translation key
+        values: { field, allowedValues: allowedValues.join(", ") }, // Replace placeholders with actual values
       });
       return false;
     }
@@ -335,11 +357,8 @@ const validateParams = (req, res, options = {}) => {
       sendResponse({
         res,
         statusCode: 400,
-        translationKey: `${field} must be at least ${minLength} characters long.`,
-        data: null,
-        meta: null,
-        error: null,
-        translateMessage: false,
+        translationKey: "min_length_violation", // Use translation key
+        values: { field, minLength }, // Replace placeholders with actual values
       });
       return false;
     }
@@ -405,15 +424,9 @@ const convertTimezoneToUtc = (
   inputFormat = "YYYY-MM-DDTHH:mm:ss.SSSZ",
   outputFormat = "YYYY-MM-DDTHH:mm:ss.SSSZ"
 ) => {
-  const momentDate = moment(date, inputFormat, true); // Parse date with strict input format
-
-  if (timezone) {
-    // Apply timezone conversion to UTC if timezone is provided
-    return momentDate.tz(timezone).utc().format(outputFormat);
-  } else {
-    // Simply format the date as UTC without applying timezone conversion
-    return momentDate.utc().format(outputFormat);
-  }
+  const momentDate = moment.tz(date, inputFormat, timezone);
+  // Convert to UTC and return in the output format
+  return momentDate.utc().format(outputFormat);
 };
 
 /**

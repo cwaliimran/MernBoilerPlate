@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const moment = require("moment-timezone");
 const { sendResponse, validateParams } = require("../helperUtils/responseUtil");
 const { formatUserResponse } = require("../helperUtils/userResponseUtil");
-const { sendEmailViaAwsSes } = require("../helperUtils/emailUtil");
+const { sendEmailViaBrevo } = require("../helperUtils/emailUtil");
 const {
   registrationOtpEmailTemplate,
   forgotPasswordOtpEmailTemplate,
@@ -12,7 +12,18 @@ const { createOrSkipDevice, Devices } = require("../models/Devices");
 const validator = require("validator");
 //register
 const register = async (req, res) => {
-  const { email, phoneNumber, deviceId, deviceType, userType } = req.body;
+  const {
+    email,
+    phoneNumber,
+    deviceId,
+    deviceType,
+    userType,
+    profileIcon,
+    name,
+    password,
+    timezone,
+    location,
+  } = req.body;
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -44,35 +55,44 @@ const register = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "Invalid phone number format.",
-        translateMessage: false,
+        translationKey: "invalid_phone",
       });
     }
 
-    // Fetch existing user and validate profile icon simultaneously
-    const existingUser = await User.findOne({
-      $or: [
-      { email: email.trim().toLowerCase() },
-      { phoneNumber: phoneNumber },
-      ],
+    // Fetch existing user
+    const existingEmail = await User.findOne({
+      email: email.trim().toLowerCase(),
     });
 
+    const existingPhone = await User.findOne({
+      phoneNumber: phoneNumber.trim().toLowerCase(),
+      "verificationStatus.phoneNumber": "verified",
+    });
 
-    if (existingUser) {
-      if (existingUser.email === email.trim().toLowerCase() && existingUser.verificationStatus.email === "verified") {
-      return sendResponse({
-        res,
-        statusCode: 409,
-        translationKey: "Email already exists.",
-      });
-      } else if (existingUser.phoneNumber === phoneNumber && existingUser.verificationStatus.phoneNumber === "verified") {
-      return sendResponse({
-        res,
-        statusCode: 409,
-        translationKey: "Phone number already exists.",
-      });
+    if (existingEmail) {
+      if (
+        (existingEmail.email === email.trim().toLowerCase(),
+        existingEmail.verificationStatus.email === "verified")
+      ) {
+        return sendResponse({
+          res,
+          statusCode: 409,
+          translationKey: "email_already",
+        });
       }
     }
+
+    if (existingPhone) {
+      if (existingPhone.phoneNumber === phoneNumber.trim().toLowerCase()) {
+        return sendResponse({
+          res,
+          statusCode: 409,
+          translationKey: "phone_number_already",
+        });
+      }
+    }
+
+    let existingUser = existingEmail;
 
     // Restrict admin creation
     let finalUserType = "user"; // default to user
@@ -84,7 +104,7 @@ const register = async (req, res) => {
         return sendResponse({
           res,
           statusCode: 403,
-          translationKey: "Unauthorized to create admin user.",
+          translationKey: "unauthorized_to",
         });
       }
     }
@@ -103,8 +123,7 @@ const register = async (req, res) => {
         return sendResponse({
           res,
           statusCode: 400,
-          translationKey: "Invalid location data.",
-          translateMessage: false,
+          translationKey: "invalid_location",
         });
       }
     }
@@ -112,13 +131,23 @@ const register = async (req, res) => {
     let user;
     if (existingUser) {
       // Update existing user if email is not verified
+      existingUser.verificationStatus.email = "pending";
+      existingUser.verificationStatus.phoneNumber = "pending";
       user = existingUser;
       Object.assign(user, req.body);
       user.accountState.userType = finalUserType;
     } else {
       // Create and save the user within the session
       user = new User({
-        ...req.body,
+        email,
+        phoneNumber,
+        deviceId,
+        deviceType,
+        profileIcon,
+        name,
+        password,
+        timezone,
+        location,
         accountState: { userType: finalUserType },
       });
     }
@@ -130,7 +159,7 @@ const register = async (req, res) => {
     // Send email within the transaction
     const subject = "Welcome! Verify Your Email";
     const mBody = registrationOtpEmailTemplate(otp);
-    // await sendEmailViaAwsSes([email], subject, mBody);
+    await sendEmailViaBrevo([email], subject, mBody);
 
     // Commit the transaction
     await session.commitTransaction();
@@ -148,19 +177,24 @@ const register = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 201,
-      translationKey: "Signup successful",
+      translationKey: "signup_successful",
       data: response,
     });
   } catch (error) {
     // Only abort the transaction if it hasn't been committed yet
     await session.abortTransaction();
-    // Handle other errors
+    // Handle validation errors from Mongoose
+    const statusCode = error.name === "ValidationError" ? 400 : 500;
+    const translationKey =
+      error.name === "ValidationError"
+        ? Object.values(error.errors)[0].message
+        : error.message;
+
     return sendResponse({
       res,
-      statusCode: 500,
-      translationKey: error.message,
+      statusCode,
+      translationKey,
       error,
-      translateMessage: false,
     });
   } finally {
     session.endSession(); // Ensure the session is always ended
@@ -182,6 +216,23 @@ const login = async (req, res) => {
 
     const user = await User.findByCredentials(email, password);
 
+    // Check if an error occurred
+    if (user.error) {
+      if (user.error === "user_not_found") {
+        return sendResponse({
+          res,
+          statusCode: 404,
+          translationKey: "user_not_found", // Use your translation key for user not found
+        });
+      } else if (user.error === "incorrect_password") {
+        return sendResponse({
+          res,
+          statusCode: 401,
+          translationKey: "incorrect_password", // Use your translation key for incorrect password
+        });
+      }
+    }
+
     // Restrict admin login
     if (user.accountState.userType === "admin") {
       const adminCreationToken = req.header("x-admin-access-token");
@@ -190,7 +241,7 @@ const login = async (req, res) => {
         return sendResponse({
           res,
           statusCode: 403,
-          translationKey: "Unauthorized to login as admin user.",
+          translationKey: "unauthorized_to_1",
         });
       }
     }
@@ -201,8 +252,7 @@ const login = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 401,
-        translationKey:
-          "Your account verification is pending. Please verify your account.",
+        translationKey: "your_account",
       });
     }
 
@@ -210,8 +260,7 @@ const login = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 403,
-        translationKey:
-          "Your account verification has been rejected. Please contact support for further assistance.",
+        translationKey: "your_account_1",
       });
     }
 
@@ -222,8 +271,7 @@ const login = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 403,
-        translationKey:
-          "Your account has been suspended. Please contact support for further assistance.",
+        translationKey: "your_account_2",
       });
     }
 
@@ -231,8 +279,7 @@ const login = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 401,
-        translationKey:
-          "Your account is not verified. Please complete the verification process.",
+        translationKey: "your_account_3",
       });
     }
 
@@ -242,11 +289,34 @@ const login = async (req, res) => {
       const finalDeletionDate = moment(user.accountState.finalDeletionDate); // Final deletion date from the user model
       const daysUntilDeletion = finalDeletionDate.diff(currentDate, "days"); // Calculate the difference in days
 
+      if (daysUntilDeletion <= 0) {
+        // Permanently delete the user account
+        // Generate a random email and username
+        const randomEmail = `deleted_user_${user._id}@example.com`;
+
+        // Update the user record to anonymize it
+        await User.findByIdAndUpdate(user._id, {
+          $set: {
+            email: randomEmail,
+            name: `Deleted User ${user._id}`,
+            phoneNumber: "",
+            profileIcon: "noimage.png",
+            "accountState.status": "hardDeleted",
+          },
+        });
+
+        return sendResponse({
+          res,
+          statusCode: 410,
+          translationKey: "user_not_found",
+        });
+      }
+
       return sendResponse({
         res,
         statusCode: 423,
-        translationKey: `Your account is marked for deletion. It will be permanently deleted after ${daysUntilDeletion} days. Please resume your account to login.`,
-        translateMessage: false,
+        translationKey: "account_deletion_warning",
+        values: { daysUntilDeletion: daysUntilDeletion }, // Values to replace placeholders
       });
     }
 
@@ -268,16 +338,15 @@ const login = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Login success",
+      translationKey: "login_success",
       data: response,
-      translateMessage: false,
     });
   } catch (error) {
+    console.log("error:", error);
     return sendResponse({
       res,
       statusCode: 400,
-      translationKey: error.message,
-      translateMessage: false,
+      translationKey: error,
     });
   }
 };
@@ -305,8 +374,7 @@ const generateOtp = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "Invalid phone number format.",
-        translateMessage: false,
+        translationKey: "invalid_phone",
       });
     }
 
@@ -325,30 +393,37 @@ const generateOtp = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "User not found",
+        translationKey: "user_not",
       });
     }
 
     // Check if account is restricted
-    if (
-      ["restricted", "suspended"].includes(user.accountState.status)
-    ) {
+    if (["restricted", "suspended"].includes(user.accountState.status)) {
       return sendResponse({
-      res,
-      statusCode: 403,
-      translationKey: "Your account is not active. Please contact support.",
+        res,
+        statusCode: 403,
+        translationKey: "your_account_4",
       });
     }
 
     const otp = user.generateOtp(type, user.timezone);
-    
+
+    if (otp.error) {
+      if (otp.error === "too_many_otp_requests") {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "too_many_otp_requests",
+        });
+      }
+    }
+
     await user.save({ session });
 
     // Send email or SMS within the transaction
     const subject = "Password Reset OTP";
     const mBody = forgotPasswordOtpEmailTemplate(otp);
-    // await sendEmailViaAwsSes([email], subject, mBody);
+    await sendEmailViaBrevo([email], subject, mBody);
 
     await session.commitTransaction();
     session.endSession();
@@ -356,7 +431,7 @@ const generateOtp = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 201,
-      translationKey: "OTP generated successfully",
+      translationKey: "otp_generated",
       data: { otp },
     });
   } catch (error) {
@@ -367,7 +442,7 @@ const generateOtp = async (req, res) => {
       res,
       statusCode: 500,
       translationKey: error.message,
-      error: error.message,
+      error: error,
     });
   }
 };
@@ -380,8 +455,11 @@ const verifyOtp = async (req, res) => {
   try {
     const { email, phoneNumber, type, otp } = req.body;
     const validationOptions = {
-      rawData: [type === "email" ? "email" : "phoneNumber", "otp"],
+      rawData: [type === "email" ? "email" : "phoneNumber"],
     };
+    if (type === "email") {
+      validationOptions.rawData.push("otp");
+    }
     if (!validateParams(req, res, validationOptions)) {
       return;
     }
@@ -395,8 +473,7 @@ const verifyOtp = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "Invalid phone number format.",
-        translateMessage: false,
+        translationKey: "invalid_phone",
       });
     }
 
@@ -415,33 +492,33 @@ const verifyOtp = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: "User not found",
+        translationKey: "user_not",
       });
     }
 
     // Access the correct OTP based on the type (email or phone)
-    const userOtpInfo = type === "email" ? user.otpInfo.emailOtp : user.otpInfo.phoneNumberOtp;
+    const userOtpInfo =
+      type === "email" ? user.otpInfo.emailOtp : user.otpInfo.phoneNumberOtp;
 
-    // Check if the OTP matches
-    if (userOtpInfo.otp !== otp.toString()) {
-      return sendResponse({
-        res,
-        statusCode: 400,
-        translationKey: "Invalid OTP.",
-        translateMessage: false,
-      });
-    }
+    if (type === "email") {
+      // Check if the OTP matches
+      if (userOtpInfo.otp !== otp.toString()) {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "invalid_otp",
+        });
+      }
 
-    // Check if the OTP has expired
-    const currentTime = moment.tz(Date.now(), user.timezone).valueOf();
-    if (userOtpInfo.otpExpires && userOtpInfo.otpExpires < currentTime) {
-      return sendResponse({
-        res,
-        statusCode: 400,
-        translationKey: "OTP has expired. Please request a new one.",
-        translateMessage: false,
-      });
+      // Check if the OTP has expired
+      const currentTime = moment.tz(Date.now(), user.timezone).valueOf();
+      if (userOtpInfo.otpExpires && userOtpInfo.otpExpires < currentTime) {
+        return sendResponse({
+          res,
+          statusCode: 400,
+          translationKey: "otp_has",
+        });
+      }
     }
 
     // Clear the OTP and OTP expiration after successful verification
@@ -473,9 +550,8 @@ const verifyOtp = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "OTP verified successfully",
+      translationKey: "otp_verified",
       data: response,
-      translateMessage: false,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -484,12 +560,11 @@ const verifyOtp = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while verifying the OTP",
+      translationKey: "an_error",
       error: error,
     });
   }
 };
-
 
 // Reset Password
 const resetPassword = async (req, res) => {
@@ -513,8 +588,7 @@ const resetPassword = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "No valid OTP request found for this account",
-        translateMessage: false,
+        translationKey: "no_valid",
       });
     }
 
@@ -542,17 +616,15 @@ const resetPassword = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Password has been reset",
+      translationKey: "password_has",
       data: response,
-      translateMessage: false,
     });
   } catch (error) {
-    console.error("Error during password reset:", error);
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while resetting the password",
-      error: error.message,
+      translationKey: "an_error_1",
+      error: error,
     });
   }
 };
@@ -571,7 +643,7 @@ const logout = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Logged out successfully",
+      translationKey: "logged_out",
     });
   } catch (err) {
     return sendResponse({
@@ -579,7 +651,6 @@ const logout = async (req, res) => {
       statusCode: 400,
       translationKey: err.message,
       error: err.message,
-      translateMessage: false,
     });
   }
 };
@@ -610,15 +681,14 @@ const deleteAccount = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey:
-        "Account marked for deletion. It will be permanently deleted after 30 days.",
+      translationKey: "account_marked",
     });
   } catch (error) {
     return sendResponse({
       res,
       statusCode: 500,
       translationKey: error.message,
-      error: error.message,
+      error: error,
     });
   }
 };
@@ -645,20 +715,21 @@ const resumeAccount = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "Invalid OTP or email.",
-        translateMessage: false,
+        translationKey: "invalid_otp_1",
       });
     }
 
     // Check if the OTP has expired based on user's timezone
     const currentTime = moment.tz(Date.now(), user.timezone).valueOf();
 
-    if (user.otpInfo.emailOtp.otpExpires && user.otpInfo.emailOtp.otpExpires < currentTime) {
+    if (
+      user.otpInfo.emailOtp.otpExpires &&
+      user.otpInfo.emailOtp.otpExpires < currentTime
+    ) {
       return sendResponse({
-      res,
-      statusCode: 400,
-      translationKey: "OTP has expired. Please request a new one.",
-      translateMessage: false,
+        res,
+        statusCode: 400,
+        translationKey: "otp_has",
       });
     }
 
@@ -672,8 +743,7 @@ const resumeAccount = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 400,
-        translationKey: "Your account is not marked for deletion.",
-        translateMessage: false,
+        translationKey: "your_account_5",
       });
     }
 
@@ -686,16 +756,15 @@ const resumeAccount = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: "Account resumed successfully, you can login now.",
-      translateMessage: false,
+      translationKey: "account_resumed",
     });
   } catch (error) {
     console.error("Error during account resumption:", error);
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "An error occurred while resuming the account",
-      error: error.message,
+      translationKey: "an_error_2",
+      error: error,
     });
   }
 };
@@ -733,6 +802,18 @@ const socialAuth = async (req, res) => {
     if (existingUser) {
       let providerLinked = false;
 
+      if (
+        existingUser.accountState.status === "restricted" ||
+        existingUser.accountState.status === "suspended"
+      ) {
+        return sendResponse({
+          res,
+          statusCode: 403,
+          translationKey: "your_account_2",
+        });
+      }
+
+
       // Check if the social ID is already linked, if not, link it
       if (provider === "google" && !existingUser.googleId) {
         existingUser.googleId = socialId; // Link Google account
@@ -748,12 +829,12 @@ const socialAuth = async (req, res) => {
       // Always update the provider and timezone, regardless of providerLinked status
       existingUser.provider = provider; // Update the provider field to reflect the latest social login
       existingUser.timezone = timezone; // Update the timezone to reflect the user's current login
-      existingUser.name = name;
+      existingUser.accountState.status = "active"; // Ensure the account is active
 
       await existingUser.save({ session });
       const token = existingUser.generateAuthToken();
-     
-        // Ensure toJSON method is applied to strip out sensitive data
+
+      // Ensure toJSON method is applied to strip out sensitive data
       const userObject = existingUser.toJSON();
       const response = formatUserResponse(userObject, token);
 
@@ -766,7 +847,7 @@ const socialAuth = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 200,
-        translationKey: "Login successful",
+        translationKey: "login_success",
         data: response,
       });
     } else {
@@ -786,7 +867,7 @@ const socialAuth = async (req, res) => {
 
       // Generate a token for the new user
       const token = newUser.generateAuthToken();
-   
+
       const jUser = newUser.toJSON();
       const response = formatUserResponse(jUser, token);
 
@@ -799,7 +880,7 @@ const socialAuth = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 201,
-        translationKey: "Signup successful",
+        translationKey: "signup_successful",
         data: response,
       });
     }
@@ -811,8 +892,7 @@ const socialAuth = async (req, res) => {
       res,
       statusCode: 500,
       translationKey: error.message,
-      error: error.message,
-      translateMessage: false,
+      error: error,
     });
   }
 };

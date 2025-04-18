@@ -2,7 +2,7 @@ const i18n = require('i18n');
 const path = require('path');
 
 i18n.configure({
-  locales: ['en'], // Supported languages e.g ['en', 'es', 'fr']
+  locales: ['en','fr'], // Supported languages e.g ['en', 'es', 'fr']
   directory: path.join(__dirname, '../assets/locales'), // Path to language files
   defaultLocale: 'en', // Default language
   queryParameter: 'lang', // Optional: If you want to support language query parameter (?lang=es)

@@ -12,30 +12,32 @@ const {
 const { formatUserResponse } = require("../helperUtils/userResponseUtil");
 
 const { sendUserNotifications } = require("./communicationController");
-const { Devices } = require("../models/Devices");
 const { NotificationTypes } = require("../models/Notifications");
-const { getActiveSockets } = require("../sockets/activeSockets");
+
+const Group = require("../sockets/Group");
+const SocketConnectionSchema = require("../sockets/SocketConnectionSchema");
 
 // Fetch chats (first message from each conversation with users list)
 const fetchChats = async (req, res) => {
   const { _id, timezone } = req.user;
   const { page, limit } = parsePaginationParams(req);
+  const { keyword } = req.query; // Get keyword from query
 
   try {
     const [latestMessages] = await Promise.all([
       Message.aggregate([
         {
           $match: {
-            $or: [{ senderId: _id }, { receiverId: _id }],
+            $or: [{ subjectId: _id }, { objectId: _id }],
           },
         },
         {
           $group: {
             _id: {
               $cond: {
-                if: { $eq: ["$senderId", _id] },
-                then: "$receiverId",
-                else: "$senderId",
+                if: { $eq: ["$subjectId", _id] },
+                then: "$objectId",
+                else: "$subjectId",
               },
             },
             lastMessage: { $last: "$$ROOT" },
@@ -44,7 +46,7 @@ const fetchChats = async (req, res) => {
                 $cond: {
                   if: {
                     $and: [
-                      { $eq: ["$receiverId", _id] },
+                      { $eq: ["$objectId", _id] },
                       { $not: { $in: [_id, "$readBy"] } },
                     ],
                   },
@@ -68,37 +70,59 @@ const fetchChats = async (req, res) => {
     ]);
 
     const userIds = latestMessages.map((message) =>
-      message.lastMessage.senderId.equals(_id)
-        ? message.lastMessage.receiverId
-        : message.lastMessage.senderId
+      message.lastMessage.subjectId.equals(_id)
+        ? message.lastMessage.objectId
+        : message.lastMessage.subjectId
     );
 
+    // Build user query, conditionally adding keyword filtering
+    const userQuery = {
+      _id: { $in: userIds },
+      "accountState.userType": "user",
+    };
+    if (keyword && keyword.trim() !== "") {
+      userQuery.$or = [
+        { name: { $regex: keyword, $options: "i" } }, // Case-insensitive match on name
+      ];
+    }
+
     // Fetch users and total chats in parallel
-    const [users, totalChats] = await Promise.all([
-      User.find({ _id: { $in: userIds }, "accountState.userType": "user" })
-      .select("name anonymousName profileIcon visibleTo")
-      .lean(),
-      Message.distinct("senderId", {
-      $or: [{ senderId: _id }, { receiverId: _id }],
+    const [currentUser, users, totalChats] = await Promise.all([
+      User.findById(_id).select("blockedUsers").lean(),
+      User.find(userQuery)
+        .select(
+          "name profileIcon"
+        )
+        .lean(),
+      Message.distinct("subjectId", {
+        $or: [{ subjectId: _id }, { objectId: _id }],
       }),
     ]);
 
     const responseData = latestMessages.map((message) => {
       // Determine the other user (not the current user)
-      const otherUserId = message.lastMessage.senderId.equals(_id)
-        ? message.lastMessage.receiverId
-        : message.lastMessage.senderId;
+      const otherUserId = message.lastMessage.subjectId.equals(_id)
+        ? message.lastMessage.objectId
+        : message.lastMessage.subjectId;
 
       const otherUser = users.find((user) => user._id.equals(otherUserId));
 
       if (!otherUser) {
         return null; // Handle when otherUser is null
       }
+      console.log("otherUser", otherUser);
 
       const baseUrl = `${process.env.S3_BASE_URL}/`;
       // Validate profile icon
-      otherUser.profileIcon = otherUser.profileIcon
-        ? baseUrl + otherUser.profileIcon
+      var pIcon = null;
+      if (
+        otherUser.profileIcon
+      ) {
+        pIcon = otherUser.profileIcon;
+      }
+     
+      otherUser.profileIcon = pIcon
+        ? baseUrl + pIcon
         : baseUrl + "noimage.png";
 
       // Convert UTC to local time
@@ -109,7 +133,29 @@ const fetchChats = async (req, res) => {
       message.lastMessage.timesince = moment(localDate).fromNow();
 
       // Determine whether to show real name or anonymous name based on visibility
-      otherUser.isAnonymous = !(otherUser.visibleTo && otherUser.visibleTo.some((id) => id.equals(_id)));
+      otherUser.isAnonymous = !(
+        otherUser.visibleTo && otherUser.visibleTo.some((id) => id.equals(_id))
+      );
+      if(otherUser.blockedUsers==null){
+        otherUser.blockedUsers = [];
+      }
+      if(otherUser.reportedBy==null){
+        otherUser.reportedBy = [];
+      }
+
+      // Determine if the other user has blocked the current user
+      const isBlocked = otherUser.blockedUsers.some((id) => id.equals(_id));
+      const hasBlocked = currentUser.blockedUsers.some((id) =>
+        id.equals(otherUser._id)
+      );
+      // Determine report status
+      const hasReported = otherUser.reportedBy.some((id) => id.equals(_id));
+
+      //loop through fromatted messages to remove readBy field
+      delete message.lastMessage.readBy;
+      delete message.lastMessage.type;
+      delete message.lastMessage.status;
+
       return {
         message: message.lastMessage,
         otherUser: formatUserResponse(
@@ -119,6 +165,11 @@ const fetchChats = async (req, res) => {
           ["basicInfo.email", "basicInfo.phoneNumber", "basicInfo.phoneNote"]
         ),
         unreadCount: message.unreadCount,
+        userFlags: {
+          isBlocked, // Check if the other user has blocked the current user
+          hasBlocked, // Check if the current user has blocked the other user
+          hasReported, // Check if the current user has reported the other user
+        },
       };
     });
 
@@ -140,55 +191,34 @@ const fetchChats = async (req, res) => {
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: "Error fetching chats" + error.message,
+      translationKey: "Error fetching chats",
       error: error.message,
     });
   }
 };
 
 // Fetch messages (pagination)
-const fetchMessages = async (req, res, isSupportTeam = false) => {
+const fetchMessages = async (req, res) => {
   const { _id, timezone } = req.user;
   let otherUserId;
   let supportPerson = null;
 
   // If it's an admin message, assign the admin ID
-  if (isSupportTeam) {
-    otherUserId = process.env.ADMIN_ID || "";
-    if (!otherUserId) {
-      return sendResponse({
-        res,
-        statusCode: 500,
-        translationKey: "Support team account not found, try again later",
-        error: "Support team account not found, try again later",
-      });
-    }
-
-    // Fetch the support person details and current user visibility in parallel
-    const [supportPersonDetails, currentUser] = await Promise.all([
-      User.findById(otherUserId).select("name profileIcon").lean(),
-      User.findById(_id).select("visibleTo").lean(),
-    ]);
-
-    // Construct base URL
-    const baseUrl = `${process.env.S3_BASE_URL}/`;
-
-    // Validate profile icon
-    supportPersonDetails.profileIcon = supportPersonDetails.profileIcon
-      ? baseUrl + supportPersonDetails.profileIcon
-      : baseUrl + "noimage.png";
-   // supportPersonDetails.isAnonymous = !currentUser.visibleTo.some((id) => id.equals(supportPersonDetails._id));
-    supportPerson = supportPersonDetails;
-  } else {
+ 
     // If it's a normal message, extract `otherUserId` from the route params
     otherUserId = req.params.otherUserId;
-  }
+
+    const validationOptions = {
+      pathParams: ["otherUserId"],
+      objectIdFields: ["otherUserId"],
+    };
+
+    if (!validateParams(req, res, validationOptions)) {
+      return;
+    }
 
   const { page, limit } = parsePaginationParams(req);
 
-  const validationOptions = {
-    objectIdFields: ["otherUserId"],
-  };
 
   if (!validateParams(req, res, validationOptions)) {
     return;
@@ -197,8 +227,8 @@ const fetchMessages = async (req, res, isSupportTeam = false) => {
   try {
     const query = {
       $or: [
-        { senderId: _id, receiverId: otherUserId },
-        { senderId: otherUserId, receiverId: _id },
+        { subjectId: _id, objectId: otherUserId },
+        { subjectId: otherUserId, objectId: _id },
       ],
     };
 
@@ -214,8 +244,8 @@ const fetchMessages = async (req, res, isSupportTeam = false) => {
     // Mark messages as read by adding the current user's ID to the `readBy` array
     await Message.updateMany(
       {
-        receiverId: _id, // Only mark messages that the current user has received
-        senderId: otherUserId, // Only from the other user
+        objectId: _id, // Only mark messages that the current user has received
+        subjectId: otherUserId, // Only from the other user
         readBy: { $ne: _id }, // Only mark unread messages (where the current user's ID is not in `readBy`)
       },
       { $addToSet: { readBy: _id } } // Add current user's ID to `readBy` array
@@ -229,12 +259,18 @@ const fetchMessages = async (req, res, isSupportTeam = false) => {
       return {
         ...message,
         timesince,
-        isRead: message.readBy && message.readBy.includes(_id), // Check if the message is read by the current user
+        isRead: message.readBy && message.readBy.some((id) => id.equals(_id)), // Check if the message is read by the current user
       };
     });
 
-    const totalPages = Math.ceil(totalMessages / limit);
-    const meta = generateMeta(page, limit, totalMessages, totalPages);
+    const meta = generateMeta(page, limit, totalMessages);
+
+    //loop through fromatted messages to remove readBy field
+    formattedMessages.forEach((message) => {
+      delete message.readBy;
+      delete message.type;
+      delete message.status;
+    });
 
     // If support person details are available, append them to the response
     const responseData = supportPerson
@@ -257,110 +293,216 @@ const fetchMessages = async (req, res, isSupportTeam = false) => {
     });
   }
 };
-// Send a new message
-const sendMessage = async (req, res, isSupportTeam = false) => {
-  const { _id: senderId, timezone } = req.user; // sender is the current authenticated user
-  const { messageType, messageContent = "", mediaUrl = null } = req.body;
 
-  let receiverId; // We'll determine this dynamically
-
-  // If it's an admin message, assign the admin ID
-  if (isSupportTeam) {
-    // Assuming you have the admin's user ID stored in your environment variables
-    receiverId = process.env.ADMIN_ID || "";
-    if (!receiverId) {
-      return sendResponse({
-        res,
-        statusCode: 500,
-        translationKey: "Support team account not found, try again later",
-        error: "Support team account not found, try again later",
-      });
-    }
-  } else {
-    // If it's a normal message, extract `otherUserId` from the route params
-    receiverId = req.params.otherUserId;
-  }
-
-  const validationOptions = {
-    rawData: ["messageType"],
-  };
-
-  if (!validateParams(req, res, validationOptions)) {
+// Send a new direct (1-to-1) message
+const sendDirectMessage = async (req, res) => {
+  const { _id: subjectId, timezone } = req.user;
+  const {
+    messageType,
+    messageContent = "",
+    mediaUrl = null,
+    conversationType = "direct",
+  } = req.body;
+  if (conversationType === "group") {
+    sendGroupMessage(req, res);
     return;
   }
+  let objectId;
+  let chatRoomId;
 
   try {
-    // Check if receiverId is active in sockets
-    const activeSockets = getActiveSockets(); // Get the latest active sockets
-    const receiverSocketId = activeSockets[receiverId]; // Get receiver's socket ID
+    
+      objectId = req.params.otherUserId;
+      if (!objectId || !mongoose.Types.ObjectId.isValid(objectId))
+        throw new Error("Invalid receiver ID");
 
-    // Determine the initial readBy array
-    const readBy = [senderId];
-    if (receiverSocketId) {
-      readBy.push(receiverId); // If receiver is active, add receiverId to readBy array
-    }
+      chatRoomId = SocketConnectionSchema.generateChatRoomId(
+        subjectId,
+        objectId
+      );
 
-    // Create the message
     const message = await Message.create({
-      senderId,
-      receiverId, // Use the determined receiverId (either admin or other user)
+      subjectId,
+      objectId: objectId,
       messageType,
       messageContent,
       mediaUrl,
-      readBy,
+      type: "direct",
+      readBy: [subjectId],
     });
 
-    const localDate = convertUtcToTimezone(message.createdAt, timezone);
-    const timesince = moment(localDate).fromNow();
+    const localDate = moment(message.createdAt).tz(timezone).format();
+    const messageObject = {
+      ...message.toObject(),
+      timesince: moment(localDate).fromNow(),
+    };
 
-    const messageObject = message.toObject();
-    messageObject.timesince = timesince;
+    // Background task for emitting messages
+    const handleBackgroundTask = async () => {
+      try {
+        const connection = await SocketConnectionSchema.findOne({
+          subjectId: objectId, // Receiver ID is the subject in the connection
+          chatRoomId,
+          type: "direct",
+        });
 
-    // Emit the message only after it is successfully saved
-    if (receiverSocketId) {
-      req.io.to(receiverSocketId).emit("receiveMessage", messageObject);
-    }
+        console.log("connection", connection)
+        if (connection) {
+          // Ensure the receiver (not sender) is connected
+          await Message.updateOne(
+            { _id: message._id },
+            { $addToSet: { readBy: objectId } }
+          );
 
-    // Emit `chatUpdated` to update the chats screen for both sender and receiver
-    const senderSocketId = activeSockets[senderId];
-    if (senderSocketId) {
-      req.io.to(senderSocketId).emit("chatUpdated", {
-        senderId,
-        receiverId,
-        messageContent: messageObject,
-      });
-    }
-    if (receiverSocketId) {
-      req.io.to(receiverSocketId).emit("chatUpdated", {
-        senderId,
-        receiverId,
-        messageContent: messageObject,
-      });
-    }
+          console.log("messageObject", messageObject)
+          req.io.to(connection.socketId).emit("receiveMessage", messageObject);
+          req.io.to(connection.socketId).emit("chatUpdated", {
+            subjectId,
+            objectId,
+            messageContent: messageObject,
+          });
 
-    // Optionally send notifications
-    const recipientIds = [receiverId];
-    const title = isSupportTeam ? "Message to Admin" : "New Message";
-    const body = `${req.user.name} sent you a message: ${messageContent}`;
+          await SocketConnectionSchema.updateOne(
+            { chatRoomId, type: "direct" },
+            { lastActive: Date.now() }
+          );
+        }
 
-    sendUserNotifications({
-      recipientIds,
-      title,
-      body,
-      data: { type: NotificationTypes.NEW_MESSAGE },
-      sender: senderId,
-      objectId: receiverId,
-    }).catch((notificationError) => {
-      console.error("Error sending notification:", notificationError);
-    });
+        // Send user notifications
+        await sendUserNotifications({
+          recipientIds: [objectId],
+          title: "New Message",
+          body: `You received a new message: ${messageContent}`,
+          data: { type: NotificationTypes.NEW_MESSAGE, objectType: "user" },
+          sender: subjectId,
+          objectId: objectId,
+        });
+      } catch (error) {
+        console.error("Error in background task:", error);
+      }
+    };
+
+    // Execute background task
+    handleBackgroundTask();
 
     return sendResponse({
       res,
       statusCode: 201,
       translationKey: "Message sent successfully",
       data: messageObject,
-      translateMessage: false,
     });
+  } catch (error) {
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: error.message,
+      error: error,
+    });
+  }
+};
+
+// Send a new group message
+const sendGroupMessage = async (req, res) => {
+  const { _id: subjectId, timezone } = req.user;
+  const objectId = req.params.otherUserId;
+  const { messageType, messageContent = "", mediaUrl = null } = req.body;
+
+  try {
+    const validationOptions = {
+      objectIdFields: ["otherUserId"],
+    };
+
+    if (!validateParams(req, res, validationOptions)) {
+      return;
+    }
+
+    const message = await Message.create({
+      objectId,
+      subjectId,
+      messageType,
+      messageContent,
+      mediaUrl,
+      type: "group",
+      readBy: [subjectId],
+    });
+
+    const localDate = moment(message.createdAt).tz(timezone).format();
+    const messageObject = {
+      ...message.toObject(),
+      timesince: moment(localDate).fromNow(),
+    };
+    
+    // Background task for emitting group messages
+    const handleGroupMessageTask = async () => {
+      try {
+        const [groupConnections, group] = await Promise.all([
+          SocketConnectionSchema.find({
+            objectId: objectId,
+            type: "group",
+          }),
+          Group.findById(objectId).select("participants"),
+        ]);
+    
+        if (!group) {
+          console.error("Group not found for objectId:", objectId);
+          return;
+        }
+    
+        // Get IDs of active members, excluding the sender
+        const activeMemberIds = groupConnections
+          .filter((conn) => conn.subjectId.toString() !== subjectId.toString())
+          .map((conn) => conn.subjectId);
+    
+        // Update `readBy` for all active members except the sender
+        await Message.updateOne(
+          { _id: message._id },
+          { $addToSet: { readBy: { $each: activeMemberIds } } }
+        );
+    
+        // Emit the message to all active members except the sender
+        const socketIds = groupConnections
+          .filter((conn) => conn.subjectId.toString() !== subjectId.toString())
+          .map((conn) => conn.socketId);
+    
+        if (socketIds.length > 0) {
+          req.io.to(socketIds).emit("receiveMessage", {
+            objectId,
+            subjectId,
+            messageContent: messageObject,
+          });
+        }
+    
+        // Notify all participants except the sender
+        const recipientIds = group.participants.filter(
+          (participant) => !participant.equals(subjectId)
+        );
+    
+        if (recipientIds.length > 0) {
+          await sendUserNotifications({
+            recipientIds,
+            title: "New Group Message",
+            body: `Received a new group message: ${messageContent}`,
+            data: { type: NotificationTypes.NEW_MESSAGE, objectType: "group" },
+            sender: subjectId,
+            objectId,
+          });
+        }
+      } catch (error) {
+        console.error("Error in handleGroupMessageTask:", error);
+      }
+    };
+    
+    // Execute background task
+    handleGroupMessageTask();
+    
+    // Return response immediately
+    return sendResponse({
+      res,
+      statusCode: 201,
+      translationKey: "Message sent successfully",
+      data: messageObject,
+    });
+    
   } catch (error) {
     return sendResponse({
       res,
@@ -387,8 +529,8 @@ const deleteChat = async (req, res) => {
   try {
     const query = {
       $or: [
-        { senderId: _id, receiverId: otherUserId },
-        { senderId: otherUserId, receiverId: _id },
+        { subjectId: _id, objectId: otherUserId },
+        { subjectId: otherUserId, objectId: _id },
       ],
     };
 
@@ -418,13 +560,13 @@ const deleteChat = async (req, res) => {
 // Delete a message
 const deleteMessage = async (req, res) => {
   const { messageId } = req.params; // Use the parameter from the route
-  if (!mongoose.Types.ObjectId.isValid(messageId)) {
-    return sendResponse({
-      res,
-      statusCode: 404,
-      translateMessage: false,
-      translationKey: "Invalid message ID",
-    });
+
+  const validationOptions = {
+    objectIdFields: ["messageId"],
+  };
+
+  if (!validateParams(req, res, validationOptions)) {
+    return;
   }
 
   try {
@@ -457,14 +599,12 @@ const markAllMessagesAsRead = async (req, res) => {
   const { _id: userId } = req.user; // Current user
   const { otherUserId } = req.params; // The other user in the conversation
 
-  // Validate the other user's ID
-  if (!mongoose.Types.ObjectId.isValid(otherUserId)) {
-    return sendResponse({
-      res,
-      statusCode: 400,
-      translationKey: "Invalid other user ID",
-      translateMessage: false,
-    });
+  const validationOptions = {
+    objectIdFields: ["otherUserId"],
+  };
+
+  if (!validateParams(req, res, validationOptions)) {
+    return;
   }
 
   try {
@@ -472,8 +612,8 @@ const markAllMessagesAsRead = async (req, res) => {
     const result = await Message.updateMany(
       {
         $or: [
-          { senderId: otherUserId, receiverId: userId }, // Messages sent to current user by otherUserId
-          { senderId: userId, receiverId: otherUserId }, // Messages sent by current user to otherUserId
+          { subjectId: otherUserId, objectId: userId }, // Messages sent to current user by otherUserId
+          { subjectId: userId, objectId: otherUserId }, // Messages sent by current user to otherUserId
         ],
         readBy: { $ne: userId }, // Only mark messages that haven't been read by the current user yet
       },
@@ -503,176 +643,12 @@ const markAllMessagesAsRead = async (req, res) => {
   }
 };
 
-// Search chats with pagination
-const searchChats = async (req, res) => {
-  const { _id } = req.user;
-  const { keyword } = req.query;
-  const { page, limit } = parsePaginationParams(req);
-
-  // Validate keyword
-  if (!keyword || keyword.trim() === "") {
-    return sendResponse({
-      res,
-      statusCode: 400,
-      translationKey: "Keyword is required for searching",
-      translateMessage: false,
-    });
-  }
-
-  try {
-    // Step 1: Search for users by name with pagination
-    const matchedUsers = await User.find({
-      name: { $regex: keyword, $options: "i" }, // Case-insensitive partial match on name
-      "accountState.userType": "user", // Ensure user type is "user"
-    })
-      .select("_id name profileIcon")
-      .skip((page - 1) * limit) // Skip for pagination
-      .limit(limit) // Limit for pagination
-      .lean();
-
-    if (!matchedUsers.length) {
-      return sendResponse({
-        res,
-        statusCode: 404,
-        translateMessage: false,
-        translationKey: "No users found for the given name",
-        data: [],
-      });
-    }
-
-    // Step 2: Extract matched user IDs
-    const matchedUserIds = matchedUsers.map((user) => user._id);
-
-    // Step 3: Find messages involving the current user and any matched users, but get the **last** message
-    const matchedMessages = await Message.aggregate([
-      {
-        $match: {
-          $or: [
-            { senderId: _id, receiverId: { $in: matchedUserIds } }, // Current user sent message
-            { receiverId: _id, senderId: { $in: matchedUserIds } }, // Current user received message
-          ],
-        },
-      },
-      {
-        $group: {
-          _id: {
-            $cond: {
-              if: { $eq: ["$senderId", _id] },
-              then: "$receiverId",
-              else: "$senderId",
-            },
-          },
-          lastMessage: { $last: "$$ROOT" }, // Get the last message instead of the first
-          unreadCount: {
-            $sum: {
-              $cond: {
-                if: {
-                  $and: [
-                    { $eq: ["$receiverId", _id] }, // Unread messages should be received by the current user
-                    { $not: { $in: [_id, "$readBy"] } }, // Message is unread by the current user
-                  ],
-                },
-                then: 1,
-                else: 0,
-              },
-            },
-          },
-        },
-      },
-      {
-        $sort: { "lastMessage.createdAt": -1 }, // Sort by the latest message
-      },
-      {
-        $skip: (page - 1) * limit, // Pagination
-      },
-      {
-        $limit: limit, // Pagination limit
-      },
-    ]);
-
-    // If no messages were found, return a 404
-    if (!matchedMessages.length) {
-      return sendResponse({
-        res,
-        statusCode: 404,
-        translateMessage: false,
-        translationKey: "No chats found for the given name",
-        data: [],
-      });
-    }
-
-    // Step 4: Calculate the total number of matched users for pagination meta
-    const totalMatchedUsers = await User.countDocuments({
-      name: { $regex: keyword, $options: "i" },
-    });
-
-    // Step 5: Format the response with users and their chats
-    const responseData = matchedMessages.map((message) => {
-      const otherUser = matchedUsers.find((user) =>
-        user._id.equals(
-          message.lastMessage.senderId.equals(_id)
-            ? message.lastMessage.receiverId
-            : message.lastMessage.senderId
-        )
-      );
-
-      if (!otherUser) return null;
-
-      // Construct base URL for profile icon
-      const baseUrl = `${process.env.S3_BASE_URL}/`;
-      otherUser.profileIcon = otherUser.profileIcon
-        ? baseUrl + otherUser.profileIcon
-        : baseUrl + "noimage.png";
-
-      // Convert UTC to local time
-      const localDate = convertUtcToTimezone(
-        message.lastMessage.createdAt,
-        req.user.timezone
-      );
-      message.lastMessage.timesince = moment(localDate).fromNow();
-
-      return {
-        message: message.lastMessage, // Use lastMessage instead of firstMessage
-        otherUser: {
-          _id: otherUser._id,
-          name: otherUser.name,
-          profileIcon: otherUser.profileIcon,
-        },
-        unreadCount: message.unreadCount,
-      };
-    });
-
-    // Remove null values from responseData
-    const filteredResponseData = responseData.filter((data) => data !== null);
-
-    // Calculate pagination meta
-    const totalPages = Math.ceil(totalMatchedUsers / limit);
-    const meta = generateMeta(page, limit, totalMatchedUsers, totalPages);
-
-    return sendResponse({
-      res,
-      statusCode: 200,
-      translationKey: "Chats searched successfully",
-      data: filteredResponseData,
-      meta: meta,
-    });
-  } catch (error) {
-    console.error("Error searching chats by name:", error);
-    return sendResponse({
-      res,
-      statusCode: 500,
-      translationKey: "Error searching chats by name",
-      error: error.message,
-    });
-  }
-};
 
 module.exports = {
   fetchChats,
   fetchMessages,
-  sendMessage,
+  sendDirectMessage,
   deleteChat,
   deleteMessage,
   markAllMessagesAsRead,
-  searchChats,
 };

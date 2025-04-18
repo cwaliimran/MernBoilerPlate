@@ -11,7 +11,9 @@ const {
   getSubscriptions,
   getUserProfile,
   updateUserProfile,
-  documentsIdentity
+  documentsIdentity,
+  getOtherUserProfile,
+  getEarnings
 } = require("../controllers/userController");
 const router = express.Router();
 
@@ -23,9 +25,15 @@ router.use(auth);
 //   "profileIcon",
 //   "age",
 // ];
+
 router.get("/profile", (req, res, next) => {
   getUserProfile(req, res, next);
 });
+
+router.get("/profile/:userId", (req, res, next) => {
+  getOtherUserProfile(req, res, next);
+});
+
 router.put("/profile", updateUserProfile)
 router.put("/:userIdToVerify/documents-identity", admin, documentsIdentity);
 router.get("/allUsers", admin, allUsers);
@@ -34,5 +42,6 @@ router.post("/:userIdToReport/report", reportUser);
 router.post("/add-update-subscription", addOrUpdateSubscription);
 router.post("/remove-subscription/:subscriptionId", removeSubscription);
 router.get("/subscriptions", getSubscriptions);
+router.get("/earnings", getEarnings);
 
 module.exports = router;

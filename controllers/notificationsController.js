@@ -1,55 +1,77 @@
-const { sendResponse, generateMeta, parsePaginationParams } = require('../helperUtils/responseUtil'); 
-const moment = require('moment-timezone');
-const { NotificationExp } = require('../models/Notifications');
+const {
+  sendResponse,
+  generateMeta,
+  parsePaginationParams,
+} = require("../helperUtils/responseUtil");
+const moment = require("moment-timezone");
+const { NotificationExp } = require("../models/Notifications");
 
 // Get all notifications with pagination
 const getNotifications = async (req, res) => {
-    const { page, limit } = parsePaginationParams(req);
+  const { page, limit } = parsePaginationParams(req);
 
-    try {
-        const notifications = await NotificationExp.find({ objectId: req.user._id })
-            .skip((page - 1) * limit)
-            .limit(limit);
+  try {
+    const [notifications, totalNotifications] = await Promise.all([
+      NotificationExp.find({ receiverId: req.user._id })
+        //  .populate('objectId') // Populate full subjectId object
+        .populate("subjectId", "_id name profileIcon") // Populate full subjectId object
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      NotificationExp.countDocuments({ receiverId: req.user._id }),
+    ]);
 
-        const totalNotifications = await NotificationExp.countDocuments({ objectId: req.user._id });
+    // Calculate pagination meta
+    const meta = generateMeta(page, limit, totalNotifications);
 
-        // Calculate pagination meta
-        const meta = generateMeta(page, limit, totalNotifications);
+    const formattedNotifications = notifications.map((notification) => {
+      const {
+        _id,
+        type,
+        objectId,
+        title,
+        body,
+        data,
+        url,
+        isRead,
+        createdAt,
+        objectType,
+        subjectId,
+        receiverId,
+      } = notification;
+      const userTimezone = req.user.timezone || "UTC";
+      const timeSince = moment(createdAt).tz(userTimezone).fromNow();
 
-        const formattedNotifications = notifications.map(notification => {
-            const { _id, type, subjectId, objectId, title, body, data, url, isRead, createdAt } = notification;
-            const userTimezone = req.user.timezone || 'UTC'; 
-            const timeSince = moment(createdAt).tz(userTimezone).fromNow();
+      return {
+        _id,
+        type,
+        objectId,
+        objectType,
+        subject: subjectId,
+        title,
+        body,
+        data,
+        isRead,
+        timeSince,
+      };
+    });
 
-            return {
-                _id,
-                type,
-                subjectId,
-                objectId,
-                title,
-                body,
-                data,
-                isRead,
-                timeSince
-            };
-        });
-
-        return sendResponse({
-            res,
-            statusCode: 200,
-            translationKey: 'Notifications fetched successfully',
-            data: formattedNotifications,
-            meta: meta,
-        });
-    } catch (error) {
-        console.error(error);
-        return sendResponse({
-            res,
-            statusCode: 500,
-            translationKey: 'Error fetching notifications',
-            error
-        });
-    }
+    return sendResponse({
+      res,
+      statusCode: 200,
+      translationKey: "notifications_fetched_success", // Use translation key
+      data: formattedNotifications,
+      meta: meta,
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse({
+      res,
+      statusCode: 500,
+      translationKey: "notifications_fetch_error", // Use translation key for errors
+      error,
+    });
+  }
 };
 
 // Mark a notification as read by ID
@@ -64,28 +86,27 @@ const readNotification = async (req, res) => {
       return sendResponse({
         res,
         statusCode: 404,
-        translateMessage: false,
-        translationKey: 'Notification not found'
+        translationKey: "notification_not_found", // Use translation key
       });
     }
     return sendResponse({
       res,
       statusCode: 200,
-      translationKey: 'Notification marked as read successfully',
-      data: notification
+      translationKey: "notification_marked_read_success", // Use translation key
+      data: notification,
     });
   } catch (error) {
     console.error(error);
     return sendResponse({
       res,
       statusCode: 500,
-      translationKey: 'Error marking notification as read',
-      error
+      translationKey: "notification_mark_read_error", // Use translation key
+      error,
     });
   }
 };
 
 module.exports = {
   getNotifications,
-  readNotification
+  readNotification,
 };
